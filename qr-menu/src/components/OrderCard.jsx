@@ -2,7 +2,7 @@ export default function OrderCard({order, refresh}){
 
   async function updateStatus(status){
 
-    await fetch(`http://localhost:5000/api/orders/${order._id}`,{
+    await fetch(`https://hotelmenu-6752.onrender.com/api/orders/${order._id}`,{
       method:"PATCH",
       headers:{
         "Content-Type":"application/json"
@@ -17,7 +17,7 @@ async function deleteOrder(){
 
   if(!window.confirm("Delete this order?")) return;
 
-  await fetch(`http://localhost:5000/api/orders/${order._id}`,{
+  await fetch(`https://hotelmenu-6752.onrender.com/api/orders/${order._id}`,{
     method:"DELETE"
   });
 

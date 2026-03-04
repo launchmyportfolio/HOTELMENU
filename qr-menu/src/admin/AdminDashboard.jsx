@@ -7,7 +7,7 @@ export default function AdminDashboard(){
   const [orders, setOrders] = useState([]);
 
   async function fetchOrders(){
-    const res = await fetch("http://localhost:5000/api/orders");
+    const res = await fetch("https://hotelmenu-6752.onrender.com/api/orders");
     const data = await res.json();
     setOrders(data);
   }

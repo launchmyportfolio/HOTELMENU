@@ -13,7 +13,7 @@ export default function Status() {
 
     async function fetchStatus() {
 
-      const res = await fetch("http://localhost:5000/api/orders");
+      const res = await fetch("https://hotelmenu-6752.onrender.com/api/orders");
       const data = await res.json();
 
       const order = data.find(o => o._id === orderId);
