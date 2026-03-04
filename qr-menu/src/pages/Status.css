@@ -1,0 +1,76 @@
+/* Main section */
+.status-section {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Blurred background image */
+.status-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('../assets/restaurent.jpg') center/cover no-repeat;
+  filter: blur(8px);
+  transform: scale(1.1); /* prevents blur edges */
+  z-index: -2;
+}
+
+/* Dark overlay for contrast */
+.status-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: -1;
+}
+
+/* Container */
+.status-container {
+  text-align: center;
+  color: white;
+  width: 90%;
+  max-width: 900px;
+}
+
+/* Heading */
+.status-heading {
+  font-size: 42px;
+  margin-bottom: 10px;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.7);
+}
+
+/* Sub text */
+.status-subtext {
+  margin-bottom: 40px;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+/* Cards container */
+.status-cards {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+/* Status card */
+.status-card {
+  padding: 25px 35px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px);
+  font-size: 18px;
+  font-weight: 600;
+  transition: 0.3s;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Active card */
+.status-active {
+  background: #ff6b00;
+  transform: scale(1.08);
+}

@@ -1,0 +1,257 @@
+/* Full-page premium background with visible blur */
+.items-page {
+  background: url('../assets/restaurent.jpg') no-repeat center center;
+  background-size: cover;
+  min-height: 100vh;
+  padding: 60px 40px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.items-page::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); /* dark overlay for contrast */
+  backdrop-filter: blur(10px);
+  z-index: 0;
+}
+
+/* Cart info floating over the page */
+.cart-info {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background: rgba(255,255,255,0.95);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: bold;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+/* Checkout button inside cart info */
+.checkout-btn {
+  background: #ff6b00;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(255,126,95,0.3);
+}
+.checkout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,126,95,0.4);
+}
+
+/* Grid layout for items */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+  margin-top: 100px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Card styling */
+.card {
+  position: relative;
+  background: rgba(255,255,255,0.95);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+}
+
+/* Card image */
+.card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+/* Card content */
+.card-content {
+  padding: 15px;
+  text-align: center;
+}
+
+.card-content h3 {
+  margin: 10px 0 5px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.rating {
+  margin: 5px 0;
+  color: #f4c430; /* gold stars */
+  font-size: 14px;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background-color: #ff6347;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 0 12px 12px 0;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 2;
+}
+/* Default (disabled look) */
+.add-to-cart-btn {
+  margin-top: 10px;
+  padding: 8px 20px;
+  background: #f2f2f2;   /* disabled color */
+  color: #777;
+  border: 1px solid #ddd;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: not-allowed;
+  transition: all 0.3s ease;
+}
+
+/* Enabled when + is clicked */
+.add-to-cart-btn.active {
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(255,126,95,0.3);
+}
+
+.add-to-cart-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,126,95,0.4);
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .items-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 80px;
+  }
+
+  .card img {
+    height: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cart-info {
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .checkout-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .card img {
+    height: 120px;
+  }
+}
+
+.counter{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+margin-bottom:10px;
+}
+
+.counter button{
+background:#ff6b00;
+color:white;
+border:none;
+width:30px;
+height:30px;
+border-radius:6px;
+cursor:pointer;
+font-size:18px;
+}
+
+.counter span{
+font-weight:bold;
+font-size:16px;
+min-width:20px;
+text-align:center;
+}
+
+/* ADD button (Swiggy style) */
+.add-btn{
+margin-top:12px;
+padding:8px 22px;
+border-radius:6px;
+border:2px solid #ff6b00;
+background:white;
+color:#ff6b00;
+font-weight:700;
+cursor:pointer;
+transition:0.25s;
+}
+
+.add-btn:hover{
+background:#ff6b00;
+color:white;
+}
+
+/* Quantity selector */
+.qty-box{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:12px;
+margin-top:12px;
+border:2px solid #ff6b00;
+border-radius:6px;
+padding:5px 10px;
+width:110px;
+}
+
+/* + and - buttons */
+.qty-box button{
+background:none;
+border:none;
+color:#ff6b00;
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+width:28px;
+height:28px;
+}
+
+/* number */
+.qty-box span{
+font-weight:700;
+font-size:16px;
+min-width:20px;
+text-align:center;
+}

@@ -1,0 +1,263 @@
+/* HERO SECTION */
+
+.hero {
+  height: 100vh;
+  background-image: url("assets/restaurent.jpg");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* dark overlay */
+
+.hero-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* content */
+
+.hero-content {
+  position: relative;
+  text-align: center;
+  color: white;
+  max-width: 700px;
+  padding: 20px;
+}
+
+/* heading */
+
+.hero-content h1 {
+  font-size: 55px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* paragraph */
+
+.hero-content p {
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+/* buttons */
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.btn-primary {
+  background: #ff6b00;
+  color: white;
+  padding: 12px 28px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #ff4500;
+}
+
+.btn-secondary {
+  border: 2px solid white;
+  color: white;
+  padding: 12px 28px;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.btn-secondary:hover {
+  background: white;
+  color: black;
+}
+
+
+nav a:hover {
+  color: #ff6b00;
+  transform: translateY(-2px);
+}
+
+/* ITEMS PAGE */
+
+.items{
+  min-height:100vh;
+  padding:120px 60px 60px 60px;
+
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:35px;
+
+  background-image:url("../assets/restaurent.jpg");
+  background-size:cover;
+  background-position:center;
+}
+
+/* CARD */
+
+.card{
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+  top:50px;
+  width: 400px;
+  height: 400px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.25);
+
+  transition:0.3s;
+  text-align:center;
+}
+
+/* CARD HOVER */
+
+.card:hover{
+  transform:translateY(-8px);
+  box-shadow:0 15px 35px rgba(0,0,0,0.35);
+}
+
+/* FOOD IMAGE */
+
+.card img{
+  width:100%;
+  height:200px;
+  object-fit:cover;
+}
+
+/* FOOD NAME */
+
+.card h3{
+  margin:15px 0 8px 0;
+  font-size:20px;
+}
+
+/* PRICE */
+
+.card p{
+  font-size:18px;
+  font-weight:600;
+  color:#ff6b00;
+  margin-bottom:15px;
+}
+
+/* BUTTON */
+
+.card button{
+  margin-bottom:20px;
+  padding:10px 22px;
+
+  border:none;
+  border-radius:6px;
+
+  background:#ff6b00;
+  color:white;
+
+  font-size:15px;
+  font-weight:600;
+
+  cursor:pointer;
+  transition:0.3s;
+}
+
+/* BUTTON HOVER */
+
+.card button:hover{
+  background:#ff4500;
+}
+
+/* CART PAGE */
+
+.cart-page{
+  min-height:100vh;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  background-image:url("/images/restaurant-bg.jpg");
+  background-size:cover;
+  background-position:center;
+
+  position:relative;
+}
+
+/* overlay */
+
+.cart-page::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+}
+
+/* cart container */
+
+.cart-container{
+  position:relative;
+
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(8px);
+
+  padding:40px 60px;
+  border-radius:12px;
+
+  text-align:center;
+  color:white;
+
+  box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+/* title */
+
+.cart-container h1{
+  margin-bottom:25px;
+  font-size:36px;
+}
+
+/* order button */
+
+.order-btn{
+  padding:12px 28px;
+
+  border:none;
+  border-radius:6px;
+
+  background:#ff6b00;
+  color:white;
+
+  font-size:16px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:0.3s;
+}
+
+/* hover effect */
+
+.order-btn:hover{
+  background:#ff4500;
+  transform:translateY(-2px);
+}
+
+.cart-item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.2);
+}
+
+.order-btn:disabled{
+  background:gray;
+  cursor:not-allowed;
+}

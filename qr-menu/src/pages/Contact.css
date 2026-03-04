@@ -1,0 +1,103 @@
+/* Section with background */
+.contact-section {
+  height: 100vh;
+  background-image: url('../assets/restaurent.jpg');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Dark overlay */
+.contact-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.65);
+}
+
+/* Container */
+.contact-container {
+  position: relative;
+  color: white;
+  width: 90%;
+  max-width: 1100px;
+  text-align: center;
+}
+
+.contact-info h2{
+    color: #ff6b00;
+}
+
+/* Heading */
+.contact-heading {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* Subtext */
+.contact-subtext {
+  margin-bottom: 40px;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+/* Grid layout */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+/* Info box */
+.contact-info {
+  text-align: left;
+  background: rgba(255,255,255,0.1);
+  padding: 30px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+}
+
+/* Form */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Inputs */
+.contact-input {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  font-size: 15px;
+}
+
+/* Textarea */
+.contact-textarea {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  font-size: 15px;
+}
+
+/* Button */
+.contact-button {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: #ff6b00;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.contact-button:hover {
+  background: #e65c00;
+}
