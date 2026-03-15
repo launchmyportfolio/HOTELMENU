@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import Navbar from "./components/Navbar";
@@ -14,6 +14,7 @@ import MenuManagement from "./admin/MenuManagement";
 import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
 import CustomerLogin from "./pages/CustomerLogin";
+import TablesDashboard from "./admin/TablesDashboard";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -22,7 +23,9 @@ function AdminRoute({ isAdmin, children }) {
 }
 
 function CustomerRoute({ session, children }) {
-  return session ? children : <Navigate to="/login" replace />;
+  const location = useLocation();
+  const search = location.search || "";
+  return session ? children : <Navigate to={`/login${search}`} replace />;
 }
 
 function App() {
@@ -205,6 +208,15 @@ function App() {
           element={
             <AdminRoute isAdmin={isAdmin}>
               <MenuManagement token={adminToken} mode="manage" />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/tables"
+          element={
+            <AdminRoute isAdmin={isAdmin}>
+              <TablesDashboard token={adminToken} />
             </AdminRoute>
           }
         />

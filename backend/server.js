@@ -8,6 +8,7 @@ const orderRoutes = require("./routes/orders");
 const menuRoutes = require("./routes/menu");
 const adminRoutes = require("./routes/admin");
 const customerSessionRoutes = require("./routes/customerSession");
+const tableRoutes = require("./routes/tables");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/customer/session", customerSessionRoutes);
+app.use("/api/admin/tables", tableRoutes);
 
 
 // Test route

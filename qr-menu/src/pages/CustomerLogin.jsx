@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CustomerLogin.css";
 
@@ -6,13 +6,18 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function CustomerLogin({ onLogin, session }) {
 
+  const paramsTable = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = Number(params.get("table"));
+    return Number.isFinite(t) && t > 0 ? t : null;
+  }, []);
+
   const [form, setForm] = useState({
-    tableNumber: "",
     customerName: "",
     phoneNumber: ""
   });
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState(paramsTable ? "" : "Invalid table QR code.");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,15 +33,19 @@ export default function CustomerLogin({ onLogin, session }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!paramsTable) {
+      setError("Invalid table QR code.");
+      return;
+    }
     setError("");
 
     const payload = {
-      tableNumber: Number(form.tableNumber),
+      tableNumber: paramsTable,
       customerName: form.customerName.trim(),
       phoneNumber: form.phoneNumber.trim()
     };
 
-    if (!payload.tableNumber || !payload.customerName || !payload.phoneNumber) {
+    if (!payload.customerName || !payload.phoneNumber) {
       setError("Please fill in all fields.");
       return;
     }
@@ -80,23 +89,17 @@ export default function CustomerLogin({ onLogin, session }) {
       <div className="login-card">
 
         <h1>Start Your Order</h1>
-        <p className="login-subtext">Enter your table to browse the menu.</p>
+        <p className="login-subtext">Scan the QR at your table to continue.</p>
+
+        {paramsTable && (
+          <p className="muted" style={{ marginBottom: "8px" }}>
+            Table: <strong>{paramsTable}</strong>
+          </p>
+        )}
 
         {error && <p className="login-error">{error}</p>}
 
         <form className="login-form" onSubmit={handleSubmit}>
-
-          <label>
-            Table Number
-            <input
-              type="number"
-              name="tableNumber"
-              value={form.tableNumber}
-              onChange={handleChange}
-              min="1"
-              required
-            />
-          </label>
 
           <label>
             Name
@@ -120,7 +123,7 @@ export default function CustomerLogin({ onLogin, session }) {
             />
           </label>
 
-          <button type="submit" className="login-btn">
+          <button type="submit" className="login-btn" disabled={!paramsTable}>
             Start Ordering
           </button>
 

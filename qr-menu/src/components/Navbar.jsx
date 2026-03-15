@@ -25,6 +25,7 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
       return (
         <>
           <Link className="nav-link" to="/admin/orders">Orders</Link>
+          <Link className="nav-link" to="/admin/tables">Tables</Link>
           <Link className="nav-link" to="/admin/add-product">Add Product</Link>
           <Link className="nav-link" to="/admin/edit-product">Edit Product</Link>
           <button className="nav-btn" onClick={onLogout}>Logout</button>

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 const CustomerSession = require("../models/CustomerSession");
+const Table = require("../models/Table");
 const isAdmin = require("../middleware/isAdmin");
 
 
@@ -42,6 +43,18 @@ router.post("/", async (req, res) => {
       total
     });
     await order.save();
+
+    await Table.findOneAndUpdate(
+      { tableNumber: Number(tableNumber) },
+      {
+        status: "occupied",
+        customerName,
+        phoneNumber,
+        activeSession: true,
+        updatedAt: new Date()
+      },
+      { upsert: true }
+    );
 
     res.json(order);
 
@@ -94,6 +107,16 @@ router.patch("/:id", isAdmin, async (req, res) => {
       await CustomerSession.findOneAndUpdate(
         { tableNumber: order.tableNumber, active: true },
         { active: false, endedAt: new Date() }
+      );
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        {
+          status: "free",
+          customerName: "",
+          phoneNumber: "",
+          activeSession: false,
+          updatedAt: new Date()
+        }
       );
     }
 

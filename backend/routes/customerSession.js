@@ -2,8 +2,18 @@ const express = require("express");
 const crypto = require("crypto");
 
 const CustomerSession = require("../models/CustomerSession");
+const Table = require("../models/Table");
 
 const router = express.Router();
+const DEFAULT_TABLES = Number(process.env.DEFAULT_TABLES || 10);
+
+async function ensureTables() {
+  const count = await Table.countDocuments();
+  if (count === 0) {
+    const seed = Array.from({ length: DEFAULT_TABLES }, (_, i) => ({ tableNumber: i + 1 }));
+    await Table.insertMany(seed);
+  }
+}
 
 // Start a new session for a table
 router.post("/start", async (req, res) => {
@@ -23,6 +33,17 @@ router.post("/start", async (req, res) => {
       return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
     }
 
+    await ensureTables();
+
+    const table = await Table.findOne({ tableNumber: numericTable });
+    if (!table) {
+      return res.status(400).json({ error: "Invalid table QR code." });
+    }
+
+    if (table.status === "occupied") {
+      return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
+    }
+
     const sessionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString("hex");
 
     const session = new CustomerSession({
@@ -33,6 +54,19 @@ router.post("/start", async (req, res) => {
     });
 
     await session.save();
+
+    await Table.findOneAndUpdate(
+      { tableNumber: numericTable },
+      {
+        tableNumber: numericTable,
+        status: "occupied",
+        customerName,
+        phoneNumber,
+        activeSession: true,
+        updatedAt: new Date()
+      },
+      { upsert: true }
+    );
 
     return res.json(session);
 
@@ -65,6 +99,17 @@ router.post("/end", async (req, res) => {
     if (!session) {
       return res.status(404).json({ error: "Active session not found." });
     }
+
+    await Table.findOneAndUpdate(
+      { tableNumber: numericTable },
+      {
+        status: "free",
+        customerName: "",
+        phoneNumber: "",
+        activeSession: false,
+        updatedAt: new Date()
+      }
+    );
 
     return res.json({ message: "Session ended", session });
 
