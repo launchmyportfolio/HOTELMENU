@@ -1,8 +1,13 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
 const orderRoutes = require("./routes/orders");
+const menuRoutes = require("./routes/menu");
+const adminRoutes = require("./routes/admin");
+const customerSessionRoutes = require("./routes/customerSession");
 
 const app = express();
 
@@ -18,6 +23,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/orders", orderRoutes);
+app.use("/api/menu", menuRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/customer/session", customerSessionRoutes);
 
 
 // Test route

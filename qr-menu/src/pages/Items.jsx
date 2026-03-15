@@ -1,77 +1,75 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import menuData from "../data/menuData";
 import "./Items.css";
+
+const API_BASE = "http://localhost:5000";
 
 export default function Items() {
 
+  const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState([]);
   const [counts, setCounts] = useState({});
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-function increase(id) {
-  const item = menuData.find(i => i.id === id);
-
-  setCounts(prev => ({
-    ...prev,
-    [id]: (prev[id] || 0) + 1
-  }));
-
-  setCart(prev => {
-    const existing = prev.find(p => p.id === id);
-
-    if (existing) {
-      return prev.map(p =>
-        p.id === id ? { ...p, qty: p.qty + 1 } : p
-      );
+  useEffect(() => {
+    async function fetchMenu() {
+      try {
+        const res = await fetch(`${API_BASE}/api/menu`);
+        const data = await res.json();
+        setMenu(data);
+      } catch (err) {
+        console.error("Failed to load menu", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    return [...prev, { ...item, qty: 1 }];
-  });
-}
-function decrease(id) {
-  setCounts(prev => ({
-    ...prev,
-    [id]: Math.max((prev[id] || 0) - 1, 0)
-  }));
+    fetchMenu();
+  }, []);
 
-  setCart(prev =>
-    prev
-      .map(p =>
-        p.id === id ? { ...p, qty: p.qty - 1 } : p
-      )
-      .filter(p => p.qty > 0)
-  );
-}
+  function increase(id) {
+    const item = menu.find(i => i._id === id);
+    if (!item) return;
 
-  function handleAdd(item) {
-
-    const qty = counts[item.id] || 0;
-    if (qty === 0) return;
+    setCounts(prev => ({
+      ...prev,
+      [id]: (prev[id] || 0) + 1
+    }));
 
     setCart(prev => {
-
-      const existing = prev.find(p => p.id === item.id);
+      const existing = prev.find(p => p._id === id);
 
       if (existing) {
         return prev.map(p =>
-          p.id === item.id
-            ? { ...p, qty: p.qty + qty }
-            : p
+          p._id === id ? { ...p, qty: p.qty + 1 } : p
         );
       }
 
-      return [...prev, { ...item, qty }];
+      return [...prev, { ...item, qty: 1 }];
     });
+  }
 
-    setCounts(prev => ({ ...prev, [item.id]: 0 }));
+  function decrease(id) {
+    setCounts(prev => ({
+      ...prev,
+      [id]: Math.max((prev[id] || 0) - 1, 0)
+    }));
+
+    setCart(prev =>
+      prev
+        .map(p =>
+          p._id === id ? { ...p, qty: p.qty - 1 } : p
+        )
+        .filter(p => p.qty > 0)
+    );
   }
 
   function handleCheckout() {
     navigate("/cart", { state: { cart } });
   }
 
-  function renderStars(rating) {
+  function renderStars(rating = 4.5) {
 
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
@@ -103,9 +101,11 @@ function decrease(id) {
 
       <div className="items-grid">
 
-        {menuData.map(item => (
+        {loading && <p className="info-text">Loading menu...</p>}
 
-          <div className="card" key={item.id}>
+        {!loading && menu.map(item => (
+
+          <div className="card" key={item._id}>
 
             <div className="badge">{item.category}</div>
 
@@ -114,26 +114,33 @@ function decrease(id) {
             <div className="card-content">
 
               <h3>{item.name}</h3>
+              <p className="muted">{item.description}</p>
 
               <div className="rating">
-                {renderStars(item.rating)} ({item.rating})
+                {renderStars(item.rating)} ({item.rating || 4.5})
               </div>
 
               <p>₹{item.price}</p>
 
-              {counts[item.id] > 0 ? (
-                <div className="qty-box">
-                  <button onClick={() => decrease(item.id)}>-</button>
-                  <span>{counts[item.id]}</span>
-                  <button onClick={() => increase(item.id)}>+</button>
-                </div>
-              ) : (
-                <button
-                  className="add-btn"
-                  onClick={() => increase(item.id)}
-                >
-                  ADD
-                </button>
+              {!item.available && (
+                <p className="muted">Out of Stock</p>
+              )}
+
+              {item.available && (
+                counts[item._id] > 0 ? (
+                  <div className="qty-box">
+                    <button onClick={() => decrease(item._id)}>-</button>
+                    <span>{counts[item._id]}</span>
+                    <button onClick={() => increase(item._id)}>+</button>
+                  </div>
+                ) : (
+                  <button
+                    className="add-btn"
+                    onClick={() => increase(item._id)}
+                  >
+                    ADD
+                  </button>
+                )
               )}
 
             </div>
@@ -141,6 +148,10 @@ function decrease(id) {
           </div>
 
         ))}
+
+        {!loading && menu.length === 0 && (
+          <p className="info-text">No menu items available yet.</p>
+        )}
 
       </div>
 

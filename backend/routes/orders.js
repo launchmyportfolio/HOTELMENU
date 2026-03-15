@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
+const CustomerSession = require("../models/CustomerSession");
+const isAdmin = require("../middleware/isAdmin");
 
 
 // 1️⃣ Place Order
@@ -8,7 +10,37 @@ router.post("/", async (req, res) => {
 
   try {
 
-    const order = new Order(req.body);
+    const {
+      tableNumber,
+      customerName,
+      phoneNumber,
+      sessionId,
+      items,
+      total
+    } = req.body;
+
+    if (!tableNumber || !customerName || !phoneNumber || !sessionId) {
+      return res.status(400).json({ error: "Table number, customer name, phone, and sessionId are required." });
+    }
+
+    const activeSession = await CustomerSession.findOne({
+      tableNumber: Number(tableNumber),
+      sessionId,
+      active: true
+    });
+
+    if (!activeSession) {
+      return res.status(403).json({ error: "No active session for this table." });
+    }
+
+    const order = new Order({
+      tableNumber,
+      customerName,
+      phoneNumber,
+      sessionId,
+      items,
+      total
+    });
     await order.save();
 
     res.json(order);
@@ -21,7 +53,7 @@ router.post("/", async (req, res) => {
 
 
 // 2️⃣ Get All Orders (Admin)
-router.get("/", async (req, res) => {
+router.get("/", isAdmin, async (req, res) => {
 
   try {
 
@@ -35,9 +67,20 @@ router.get("/", async (req, res) => {
 
 });
 
+// 2️⃣b Get single order (public for status tracking)
+router.get("/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // 3️⃣ Update Order Status
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", isAdmin, async (req, res) => {
 
   try {
 
@@ -46,6 +89,13 @@ router.patch("/:id", async (req, res) => {
       { status: req.body.status },
       { new: true }
     );
+
+    if (order && req.body.status === "Completed") {
+      await CustomerSession.findOneAndUpdate(
+        { tableNumber: order.tableNumber, active: true },
+        { active: false, endedAt: new Date() }
+      );
+    }
 
     res.json(order);
 
@@ -56,7 +106,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // 4️⃣ Delete Order
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", isAdmin, async (req, res) => {
 
   try {
 

@@ -2,27 +2,29 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "./Status.css";
 
+const API_BASE = "http://localhost:5000";
+
 export default function Status() {
 
   const [status, setStatus] = useState("received");
   const location = useLocation();
   const orderId = location.state?.orderId;
 
-  // Demo status change simulation
   useEffect(() => {
 
     async function fetchStatus() {
+      if (!orderId) return;
 
-      const res = await fetch("https://hotelmenu-6752.onrender.com/api/orders");
-      const data = await res.json();
+      const res = await fetch(`${API_BASE}/api/orders/${orderId}`);
+      if (!res.ok) return;
 
-      const order = data.find(o => o._id === orderId);
-      if (order) {
-        if (order.status === "Pending") setStatus("received");
-        if (order.status === "Cooking") setStatus("preparing");
-        if (order.status === "Ready") setStatus("ready");
-        if(order.status === "Served") setStatus("served");
-      }
+      const order = await res.json();
+
+      if (order.status === "Pending") setStatus("received");
+      if (order.status === "Cooking") setStatus("preparing");
+      if (order.status === "Ready") setStatus("ready");
+      if (order.status === "Served") setStatus("served");
+      if (order.status === "Completed") setStatus("completed");
     }
 
     fetchStatus();
@@ -59,6 +61,10 @@ export default function Status() {
 
       <div className={`status-card ${status === "ready" ? "status-active" : ""}`}>
         Ready to Serve
+      </div>
+
+      <div className={`status-card ${(status === "served" || status === "completed") ? "status-active" : ""}`}>
+        {status === "completed" ? "Completed" : "Served"}
       </div>
 
     </div>

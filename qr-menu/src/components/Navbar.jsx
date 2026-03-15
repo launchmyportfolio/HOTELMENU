@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
 
   return (
 
@@ -10,10 +10,31 @@ export default function Navbar() {
 
       <div style={styles.links}>
 
-        <Link style={styles.link} to="/">Home</Link>
-        <Link style={styles.link} to="/items">Items</Link>
-        <Link style={styles.link} to="/contact">Contact</Link>
-        <Link style={styles.link} to="/admin/login">Admin</Link>
+        {isAdmin ? (
+          <>
+            <Link style={styles.link} to="/admin/orders">Orders</Link>
+            <Link style={styles.link} to="/admin/add-product">Add Product</Link>
+            <Link style={styles.link} to="/admin/edit-product">Edit Product</Link>
+            <button style={styles.logout} onClick={onLogout}>Logout</button>
+          </>
+        ) : (
+          <>
+            <Link style={styles.link} to="/">Home</Link>
+            <Link style={styles.link} to="/items">Items</Link>
+            <Link style={styles.link} to="/contact">Contact</Link>
+            <Link style={styles.link} to="/admin/login">Admin</Link>
+            {session && (
+              <>
+                <span style={styles.sessionTag}>
+                  Table {session.tableNumber} • {session.customerName}
+                </span>
+                <button style={styles.logout} onClick={onEndSession}>
+                  Leave Table
+                </button>
+              </>
+            )}
+          </>
+        )}
       </div>
 
     </nav>
@@ -67,5 +88,18 @@ const styles = {
     fontWeight: "500",
     transition: "0.3s"
   },
+  logout: {
+    background: "#ff6b00",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600"
+  },
+  sessionTag: {
+    color: "white",
+    fontWeight: "600"
+  }
 
 };

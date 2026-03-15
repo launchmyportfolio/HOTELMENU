@@ -1,0 +1,95 @@
+.login-page {
+  min-height: 100vh;
+  background: url('../assets/restaurent.jpg') no-repeat center center;
+  background-size: cover;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  z-index: 1;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 32px 36px;
+  border-radius: 18px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 420px;
+  text-align: left;
+  color: #222;
+}
+
+.login-card h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  color: #ff6b00;
+}
+
+.login-subtext {
+  margin: 0 0 18px 0;
+  color: #555;
+  font-size: 15px;
+}
+
+.login-error {
+  color: #d7263d;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: #333;
+}
+
+.login-form input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.login-btn {
+  margin-top: 8px;
+  padding: 12px;
+  background: #ff6b00;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(255, 126, 95, 0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(255, 126, 95, 0.55);
+}
+
+.login-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}

@@ -1,21 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Admin.css";
 
-export default function AdminLogin() {
+export default function AdminLogin({ onLogin, isAdmin }) {
 
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  function handleLogin(e) {
+  useEffect(() => {
+    if (isAdmin) navigate("/admin/dashboard");
+  }, [isAdmin, navigate]);
+
+  async function handleLogin(e) {
     e.preventDefault();
 
-    if(user === "Admin@123" && pass === "Admin@123"){
+    setError("");
+
+    try {
+      const res = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+
+      if (!res.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const data = await res.json();
+      onLogin(data.token);
       navigate("/admin/dashboard");
-    } else {
-      alert("Invalid Credentials");
+
+    } catch (err) {
+      setError(err.message || "Login failed");
     }
   }
 
@@ -25,6 +45,7 @@ export default function AdminLogin() {
       <form className="login-card" onSubmit={handleLogin}>
 
         <h2>Admin Login</h2>
+        {error && <p className="error-text">{error}</p>}
 
         <input
           type="text"

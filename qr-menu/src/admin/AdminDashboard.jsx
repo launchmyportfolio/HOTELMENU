@@ -2,23 +2,43 @@ import { useEffect, useState } from "react";
 import OrderCard from "../components/OrderCard";
 import "../styles/Admin.css";
 
-export default function AdminDashboard(){
+export default function AdminDashboard({ token }){
 
   const [orders, setOrders] = useState([]);
+  const [error, setError] = useState("");
 
   async function fetchOrders(){
-    const res = await fetch("https://hotelmenu-6752.onrender.com/api/orders");
-    const data = await res.json();
-    setOrders(data);
+    try {
+      const res = await fetch("http://localhost:5000/api/orders", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Unable to fetch orders");
+      }
+
+      const data = await res.json();
+      setOrders(data);
+      setError("");
+
+    } catch (err) {
+      setError(err.message);
+      setOrders([]);
+    }
   }
 
   useEffect(() => {
-    fetchOrders();
+    if (token) {
+      fetchOrders();
 
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
+      const interval = setInterval(fetchOrders, 5000);
+      return () => clearInterval(interval);
+    }
 
-  }, []);
+    return undefined;
+  }, [token]);
 
   return (
 
@@ -26,10 +46,12 @@ export default function AdminDashboard(){
 
       <h1>Restaurant Orders</h1>
 
+      {error && <p className="error-text">{error}</p>}
+
       <div className="orders-grid">
 
         {orders.map(order => (
-          <OrderCard key={order._id} order={order} refresh={fetchOrders}/>
+          <OrderCard key={order._id} order={order} refresh={fetchOrders} token={token}/>
         ))}
 
       </div>

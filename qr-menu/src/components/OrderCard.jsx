@@ -1,11 +1,12 @@
-export default function OrderCard({order, refresh}){
+export default function OrderCard({order, refresh, token}){
 
   async function updateStatus(status){
 
-    await fetch(`https://hotelmenu-6752.onrender.com/api/orders/${order._id}`,{
+    await fetch(`http://localhost:5000/api/orders/${order._id}`,{
       method:"PATCH",
       headers:{
-        "Content-Type":"application/json"
+        "Content-Type":"application/json",
+        Authorization: `Bearer ${token}`
       },
       body:JSON.stringify({status})
     });
@@ -17,8 +18,11 @@ async function deleteOrder(){
 
   if(!window.confirm("Delete this order?")) return;
 
-  await fetch(`https://hotelmenu-6752.onrender.com/api/orders/${order._id}`,{
-    method:"DELETE"
+  await fetch(`http://localhost:5000/api/orders/${order._id}`,{
+    method:"DELETE",
+    headers:{
+      Authorization: `Bearer ${token}`
+    }
   });
 
   refresh();
@@ -28,6 +32,8 @@ async function deleteOrder(){
     <div className="order-card">
 
       <h3>Table {order.tableNumber}</h3>
+      <p className="muted">Name: {order.customerName || "Guest"}</p>
+      <p className="muted">Phone: {order.phoneNumber || "N/A"}</p>
 
       {order.items.map((i,index)=>(
         <p key={index}>
@@ -51,6 +57,10 @@ async function deleteOrder(){
 
         <button onClick={()=>updateStatus("Served")}>
           Served
+        </button>
+
+        <button onClick={()=>updateStatus("Completed")}>
+          Completed
         </button>
 
       </div>
