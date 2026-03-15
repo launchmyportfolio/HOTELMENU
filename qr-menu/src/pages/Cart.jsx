@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./Cart.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -9,9 +9,28 @@ export default function Cart({ session }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  const cart = location.state?.cart || [];
+  const [cart, setCart] = useState(() => location.state?.cart || []);
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const total = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+    [cart]
+  );
+
+  function updateQty(id, delta) {
+    setCart(prev =>
+      prev
+        .map(item =>
+          item._id === id || item.id === id
+            ? { ...item, qty: Math.max(0, item.qty + delta) }
+            : item
+        )
+        .filter(item => item.qty > 0)
+    );
+  }
+
+  function removeItem(id) {
+    setCart(prev => prev.filter(item => item._id !== id && item.id !== id));
+  }
 
   async function handlePlaceOrder() {
 
@@ -80,33 +99,49 @@ export default function Cart({ session }) {
           <p className="empty-cart">Your cart is empty</p>
         ) : (
           <>
-            <ul className="cart-items">
+            <div className="cart-items">
 
               {cart.map(item => (
 
-                <li key={item._id || item.id}>
+                <div key={item._id || item.id} className="cart-card">
 
-                  <span>{item.name}</span>
+                  <div className="cart-card__info">
 
-                  <span>
-                    ₹{item.price} × {item.qty}
-                  </span>
+                    <div className="cart-thumb">
+                      {item.image
+                        ? <img src={item.image} alt={item.name} />
+                        : <span className="placeholder">Img</span>}
+                    </div>
 
-                  <span>
-                    ₹{item.price * item.qty}
-                  </span>
+                    <div className="cart-meta">
+                      <h4>{item.name}</h4>
+                      <p className="muted">₹{item.price}</p>
 
-                </li>
+                      <div className="qty-controls">
+                        <button onClick={() => updateQty(item._id || item.id, -1)} aria-label="Decrease quantity">-</button>
+                        <span>{item.qty}</span>
+                        <button onClick={() => updateQty(item._id || item.id, 1)} aria-label="Increase quantity">+</button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div className="cart-card__actions">
+                    <p className="line-total">₹{item.price * item.qty}</p>
+                    <button className="remove-btn" onClick={() => removeItem(item._id || item.id)}>Remove</button>
+                  </div>
+
+                </div>
 
               ))}
 
-            </ul>
+            </div>
 
-            <h3 className="cart-total">
-              Total: ₹{total}
-            </h3>
-
-            <div className="button-wrapper">
+            <div className="checkout-bar">
+              <div>
+                <p className="muted">Total</p>
+                <h3 className="cart-total">₹{total}</h3>
+              </div>
 
               <button
                 className="place-order-btn"
@@ -114,7 +149,6 @@ export default function Cart({ session }) {
               >
                 Place Order
               </button>
-
             </div>
 
           </>
