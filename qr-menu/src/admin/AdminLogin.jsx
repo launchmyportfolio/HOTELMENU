@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Admin.css";
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export default function AdminLogin({ onLogin, isAdmin }) {
 
   const [user, setUser] = useState("");
@@ -20,7 +22,7 @@ export default function AdminLogin({ onLogin, isAdmin }) {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/admin/login", {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: user, password: pass })

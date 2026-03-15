@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "./Cart.css";
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export default function Cart({ session }) {
 
   const location = useLocation();
@@ -42,7 +44,7 @@ export default function Cart({ session }) {
 
     try {
 
-      const res = await fetch("http://localhost:5000/api/orders", {
+      const res = await fetch(`${API_BASE}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

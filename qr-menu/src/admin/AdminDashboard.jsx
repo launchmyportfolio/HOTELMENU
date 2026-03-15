@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import OrderCard from "../components/OrderCard";
 import "../styles/Admin.css";
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export default function AdminDashboard({ token }){
 
   const [orders, setOrders] = useState([]);
@@ -9,7 +11,7 @@ export default function AdminDashboard({ token }){
 
   async function fetchOrders(){
     try {
-      const res = await fetch("http://localhost:5000/api/orders", {
+      const res = await fetch(`${API_BASE}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

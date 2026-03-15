@@ -15,7 +15,7 @@ import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
 import CustomerLogin from "./pages/CustomerLogin";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 function AdminRoute({ isAdmin, children }) {
   return isAdmin ? children : <Navigate to="/admin/login" replace />;

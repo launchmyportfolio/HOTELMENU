@@ -1,8 +1,10 @@
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export default function OrderCard({order, refresh, token}){
 
   async function updateStatus(status){
 
-    await fetch(`http://localhost:5000/api/orders/${order._id}`,{
+    await fetch(`${API_BASE}/api/orders/${order._id}`,{
       method:"PATCH",
       headers:{
         "Content-Type":"application/json",
@@ -18,7 +20,7 @@ async function deleteOrder(){
 
   if(!window.confirm("Delete this order?")) return;
 
-  await fetch(`http://localhost:5000/api/orders/${order._id}`,{
+  await fetch(`${API_BASE}/api/orders/${order._id}`,{
     method:"DELETE",
     headers:{
       Authorization: `Bearer ${token}`
