@@ -3,6 +3,7 @@
   min-height:100vh;
   position:relative;
   z-index:1;
+  padding-bottom:120px; /* avoid overlap with fixed footer */
 }
 
 /* Blurred background image */
@@ -27,6 +28,12 @@
 
 .admin-dashboard h1{
   text-align:center;
+  margin-bottom:30px;
+  color:white;
+}
+
+
+.admin-dashboard h2{
   margin-bottom:30px;
   color:white;
 }
@@ -331,6 +338,40 @@ cursor:pointer;
   margin-bottom:20px;
 }
 
+.qr-toggle{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin:0 0 16px;
+}
+
+.qr-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.qr-actions button,
+.qr-toggle button{
+  border:none;
+  padding:10px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  background:#ff6b00;
+  color:white;
+  font-weight:700;
+}
+
+.qr-actions button:disabled{
+  opacity:0.75;
+  cursor:wait;
+}
+
+.qr-note{
+  color:#f0f0f0;
+  font-weight:600;
+}
+
 .summary-card{
   background:rgba(255,255,255,0.95);
   padding:14px 18px;
@@ -340,9 +381,14 @@ cursor:pointer;
   box-shadow:0 8px 18px rgba(0,0,0,0.18);
 }
 
+.summary-card.highlight{
+  color:#ff6b00;
+  font-weight:800;
+}
+
 .tables-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:14px;
 }
 
@@ -354,6 +400,47 @@ cursor:pointer;
   display:flex;
   flex-direction:column;
   gap:8px;
+}
+
+.qr-box{
+  display:flex;
+  justify-content:center;
+  margin:4px 0 2px;
+}
+
+.qr-card{
+  background:white;
+  border:1px solid #eee;
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+  max-width:220px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.08);
+}
+
+.qr-canvas{
+  padding:14px;
+  background:white;
+  display:flex;
+  justify-content:center;
+  width:100%;
+}
+
+.qr-label{
+  width:100%;
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:8px 6px;
+  font-weight:700;
+}
+
+.table-link{
+  word-break:break-all;
+  font-size:12px;
 }
 
 .table-status{
@@ -391,6 +478,12 @@ cursor:pointer;
   background:#ff6b00;
   color:white;
   font-weight:600;
+}
+
+.table-actions .ghost-btn{
+  background:white;
+  color:#ff6b00;
+  border:2px solid #ff6b00;
 }
 
 .table-form{

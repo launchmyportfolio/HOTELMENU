@@ -16,6 +16,7 @@ import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
 import CustomerLogin from "./pages/CustomerLogin";
 import TablesDashboard from "./admin/TablesDashboard";
+import Footer from "./components/Footer";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -287,6 +288,8 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
+
+      <Footer />
 
     </BrowserRouter>
   );

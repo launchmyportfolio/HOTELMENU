@@ -3,7 +3,7 @@
   background: url('../assets/restaurent.jpg') no-repeat center center;
   background-size: cover;
   min-height: 100vh;
-  padding: 80px 32px 40px;
+  padding: 80px 32px 160px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -75,6 +75,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100%;
   cursor: pointer;
   width: 100%;
 }
@@ -96,6 +97,12 @@
 .card-content {
   padding: 15px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  flex: 1;
+  align-items: center;
 }
 
 .card-content h3 {
@@ -103,6 +110,16 @@
   font-size: 18px;
   font-weight: 600;
   color: #333;
+}
+
+.card-content .muted {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  width: 100%;
 }
 
 .rating {
@@ -152,7 +169,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .items-page {
-    padding: 90px 18px 30px;
+    padding: 90px 18px 180px;
   }
 
   .cart-info {
@@ -177,7 +194,7 @@
 
 @media (max-width: 480px) {
   .items-page {
-    padding: 90px 14px 28px;
+    padding: 90px 14px 190px;
   }
 
   .cart-info {
@@ -233,7 +250,7 @@ text-align:center;
 
 /* ADD button (Swiggy style) */
 .add-btn{
-margin-top:12px;
+margin-top:auto;
 padding:8px 22px;
 border-radius:6px;
 border:2px solid #ff6b00;
@@ -242,6 +259,7 @@ color:#ff6b00;
 font-weight:700;
 cursor:pointer;
 transition:0.25s;
+align-self:center;
 }
 
 .add-btn:hover{
@@ -255,11 +273,12 @@ display:flex;
 align-items:center;
 justify-content:center;
 gap:12px;
-margin-top:12px;
+margin-top:auto;
 border:2px solid #ff6b00;
 border-radius:6px;
 padding:5px 10px;
 width:110px;
+align-self:center;
 }
 
 /* + and - buttons */
