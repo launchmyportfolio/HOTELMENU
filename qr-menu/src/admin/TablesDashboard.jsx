@@ -96,11 +96,8 @@ export default function TablesDashboard({ token }) {
   }
 
   async function downloadQr(tableNumber) {
-    const node = cardRefs.current[tableNumber];
-    if (!node) return;
-
     try {
-      const dataUrl = await toPng(node, { cacheBust: true });
+      const dataUrl = await buildLabeledQrDataUrl(tableNumber);
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `table-${tableNumber}-qr.png`;

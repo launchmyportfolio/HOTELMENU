@@ -174,11 +174,12 @@
 
   .cart-info {
     position: fixed;
-    top: auto;
-    bottom: 18px;
-    left: 18px;
-    right: 18px;
+    top: 78px;
+    bottom: auto;
+    left: 14px;
+    right: 14px;
     justify-content: space-between;
+    border-radius: 12px;
   }
 
   .items-grid {
@@ -198,9 +199,9 @@
   }
 
   .cart-info {
-    bottom: 12px;
-    left: 12px;
-    right: 12px;
+    top: 72px;
+    left: 10px;
+    right: 10px;
     padding: 10px 12px;
     font-size: 13px;
     gap: 8px;
