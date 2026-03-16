@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import OrderCard from "../components/OrderCard";
 import "../styles/Admin.css";
+import { io } from "socket.io-client";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export default function AdminOrders({ token }){
+export default function AdminOrders({ token, restaurantId }){
 
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
@@ -35,12 +36,22 @@ export default function AdminOrders({ token }){
     if (token) {
       fetchOrders();
 
+      const socket = io(API_BASE, { transports: ["websocket", "polling"] });
+      socket.on("new-order", payload => {
+        if (payload?.restaurantId === restaurantId) {
+          fetchOrders();
+        }
+      });
+
       const interval = setInterval(fetchOrders, 5000);
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        socket.disconnect();
+      };
     }
 
     return undefined;
-  }, [token]);
+  }, [token, restaurantId]);
 
   return (
 

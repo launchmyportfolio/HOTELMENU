@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./Items.css";
+import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function Items() {
 
@@ -11,11 +13,14 @@ export default function Items() {
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const params = useParams();
+  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const { session } = useCustomerSession();
 
   useEffect(() => {
     async function fetchMenu() {
       try {
-        const res = await fetch(`${API_BASE}/api/menu`);
+        const res = await fetch(`${API_BASE}/api/menu?restaurantId=${restaurantId}`);
         const data = await res.json();
         setMenu(data);
       } catch (err) {
@@ -26,7 +31,7 @@ export default function Items() {
     }
 
     fetchMenu();
-  }, []);
+  }, [restaurantId]);
 
   function increase(id) {
     const item = menu.find(i => i._id === id);
@@ -66,7 +71,7 @@ export default function Items() {
   }
 
   function handleCheckout() {
-    navigate("/cart", { state: { cart } });
+    navigate(`/restaurant/${restaurantId}/cart`, { state: { cart } });
   }
 
   function renderStars(rating = 4.5) {

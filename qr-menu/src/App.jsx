@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -8,7 +8,6 @@ import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
 import Status from "./pages/Status";
 
-import AdminLogin from "./admin/AdminLogin";
 import AdminHome from "./admin/AdminHome";
 import AdminOrders from "./admin/AdminOrders";
 import MenuManagement from "./admin/MenuManagement";
@@ -17,280 +16,276 @@ import EditProduct from "./admin/EditProduct";
 import CustomerLogin from "./pages/CustomerLogin";
 import TablesDashboard from "./admin/TablesDashboard";
 import Footer from "./components/Footer";
+import AdminLogin from "./admin/AdminLogin"; // reused UI for owner login
+import OwnerRegister from "./admin/OwnerRegister";
+import AdminRestaurants from "./admin/AdminRestaurants";
+import AdminCreateRestaurant from "./admin/AdminCreateRestaurant";
+import { useCustomerSession } from "./context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
-function AdminRoute({ isAdmin, children }) {
-  return isAdmin ? children : <Navigate to="/admin-login" replace />;
+function OwnerRoute({ auth, children }) {
+  return auth?.token ? children : <Navigate to="/owner/login" replace />;
 }
 
-function CustomerRoute({ session, children }) {
+function CustomerRoute({ children }) {
+  const { session } = useCustomerSession();
   const location = useLocation();
+  const params = useParams();
+  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
   const search = location.search || "";
-  return session ? children : <Navigate to={`/login${search}`} replace />;
+
+  if (!session || session.restaurantId !== restaurantId) {
+    return <Navigate to={`/restaurant/${restaurantId}/login${search}`} replace />;
+  }
+  return children;
 }
 
-function App() {
-
-  const [adminToken, setAdminToken] = useState(
-    localStorage.getItem("adminToken") || ""
-  );
-
-  const [customerSession, setCustomerSession] = useState(() => {
-    const stored = localStorage.getItem("customerSession");
-    if (!stored) return null;
+function AppRoutes() {
+  const { session, setSession, clearSession } = useCustomerSession();
+  const [ownerAuth, setOwnerAuth] = useState(() => {
     try {
-      return JSON.parse(stored);
+      const stored = localStorage.getItem("ownerAuth");
+      return stored ? JSON.parse(stored) : null;
     } catch (_err) {
       return null;
     }
   });
+  const [adminAuth, setAdminAuth] = useState(() => localStorage.getItem("adminToken") || "");
 
   useEffect(() => {
-    if (adminToken) {
-      localStorage.setItem("adminToken", adminToken);
+    if (ownerAuth) {
+      localStorage.setItem("ownerAuth", JSON.stringify(ownerAuth));
+    } else {
+      localStorage.removeItem("ownerAuth");
+    }
+  }, [ownerAuth]);
+
+  useEffect(() => {
+    if (adminAuth) {
+      localStorage.setItem("adminToken", adminAuth);
     } else {
       localStorage.removeItem("adminToken");
     }
-  }, [adminToken]);
-
-  useEffect(() => {
-    if (customerSession) {
-      localStorage.setItem("customerSession", JSON.stringify(customerSession));
-    } else {
-      localStorage.removeItem("customerSession");
-    }
-  }, [customerSession]);
+  }, [adminAuth]);
 
   useEffect(() => {
     async function verifySession() {
-      if (!customerSession) return;
-
+      if (!session) return;
       try {
-        const res = await fetch(`${API_BASE}/api/customer/session/${customerSession.tableNumber}`);
+        const res = await fetch(`${API_BASE}/api/customer/session/${session.tableNumber}?restaurantId=${session.restaurantId}`);
         const data = await res.json();
-
-        if (!data.active || data.session?.sessionId !== customerSession.sessionId) {
-          setCustomerSession(null);
+        if (!data.active || data.session?.sessionId !== session.sessionId) {
+          clearSession();
         }
       } catch (err) {
         console.error("Session check failed", err);
       }
     }
-
-    if (!customerSession) return undefined;
-
+    if (!session) return undefined;
     verifySession();
     const interval = setInterval(verifySession, 15000);
-
     return () => clearInterval(interval);
-  }, [customerSession]);
-
-  const isAdmin = Boolean(adminToken);
-
-  function handleLogout() {
-    setAdminToken("");
-  }
+  }, [session, clearSession]);
 
   async function handleEndSession() {
-    if (!customerSession) return;
-
+    if (!session) return;
     try {
       const res = await fetch(`${API_BASE}/api/customer/session/end`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableNumber: customerSession.tableNumber,
-          sessionId: customerSession.sessionId
+          restaurantId: session.restaurantId,
+          tableNumber: session.tableNumber,
+          sessionId: session.sessionId
         })
       });
-
-      if (!res.ok && res.status !== 404) {
-        throw new Error("Unable to end session.");
-      }
+      if (!res.ok && res.status !== 404) throw new Error("Unable to end session.");
     } catch (err) {
       console.error("Failed to end session", err);
-      return;
     }
-
-    setCustomerSession(null);
+    clearSession();
   }
 
+  function handleOwnerLogout() {
+    setOwnerAuth(null);
+  }
+  function handleAdminLogout() {
+    setAdminAuth("");
+  }
+
+  const navSession = useMemo(() => session, [session]);
+
   return (
-
-    <BrowserRouter>
-
+    <>
       <Navbar
-        isAdmin={isAdmin}
-        onLogout={handleLogout}
-        session={customerSession}
+        isAdmin={Boolean(ownerAuth?.token || adminAuth)}
+        onLogout={ownerAuth?.token ? handleOwnerLogout : handleAdminLogout}
+        session={navSession}
         onEndSession={handleEndSession}
+        adminMode={Boolean(adminAuth && !ownerAuth?.token)}
       />
 
       <Routes>
 
+        <Route path="/" element={<Navigate to={`/restaurant/${DEFAULT_RESTAURANT}`} replace />} />
+
         <Route
-          path="/login"
+          path="/restaurant/:restaurantId/login"
           element={
             <CustomerLogin
-              session={customerSession}
-              onLogin={setCustomerSession}
+              session={session}
+              onLogin={setSession}
             />
           }
         />
 
         <Route
-          path="/"
+          path="/restaurant/:restaurantId"
           element={
-            <CustomerRoute session={customerSession}>
+            <CustomerRoute>
               <Home />
             </CustomerRoute>
           }
         />
+
         <Route
-          path="/items"
+          path="/restaurant/:restaurantId/items"
           element={
-            <CustomerRoute session={customerSession}>
+            <CustomerRoute>
               <Items />
             </CustomerRoute>
           }
         />
+
         <Route
-          path="/cart"
+          path="/restaurant/:restaurantId/cart"
           element={
-            <CustomerRoute session={customerSession}>
-              <Cart session={customerSession} />
+            <CustomerRoute>
+              <Cart session={session} />
             </CustomerRoute>
           }
         />
+
         <Route
-          path="/contact"
+          path="/restaurant/:restaurantId/contact"
           element={
-            <CustomerRoute session={customerSession}>
+            <CustomerRoute>
               <Contact />
             </CustomerRoute>
           }
         />
+
         <Route
-          path="/status"
+          path="/restaurant/:restaurantId/status"
           element={
-            <CustomerRoute session={customerSession}>
+            <CustomerRoute>
               <Status />
             </CustomerRoute>
           }
         />
 
         <Route
-          path="/admin-login"
-          element={<AdminLogin onLogin={setAdminToken} isAdmin={isAdmin} />}
+          path="/owner/login"
+          element={<AdminLogin onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} mode="owner" />}
+        />
+        <Route
+          path="/owner/register"
+          element={<OwnerRegister onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} />}
         />
 
         <Route
           path="/admin/login"
-          element={<Navigate to="/admin-login" replace />}
+          element={<AdminLogin onLogin={setAdminAuth} isAdmin={Boolean(adminAuth)} mode="admin" />}
         />
-
         <Route
-          path="/admin/home"
+          path="/admin/restaurants"
           element={
-            <AdminRoute isAdmin={isAdmin}>
-              <AdminHome onLogout={handleLogout} />
-            </AdminRoute>
+            adminAuth
+              ? <AdminRestaurants token={adminAuth} />
+              : <Navigate to="/admin/login" replace />
+          }
+        />
+        <Route
+          path="/admin/restaurants/new"
+          element={
+            adminAuth
+              ? <AdminCreateRestaurant />
+              : <Navigate to="/admin/login" replace />
           }
         />
 
         <Route
-          path="/admin/orders"
+          path="/owner/home"
           element={
-            <AdminRoute isAdmin={isAdmin}>
-              <AdminOrders token={adminToken} />
-            </AdminRoute>
+            <OwnerRoute auth={ownerAuth}>
+              <AdminHome onLogout={handleOwnerLogout} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/orders"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <AdminOrders token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/tables"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <TablesDashboard token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/products"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <MenuManagement token={ownerAuth?.token} mode="manage" restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/products/add"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <AddProduct token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/products/edit"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <MenuManagement token={ownerAuth?.token} mode="edit" restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/products/:id"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <EditProduct token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
           }
         />
 
-        <Route
-          path="/admin/products"
-          element={
-            <AdminRoute isAdmin={isAdmin}>
-              <MenuManagement token={adminToken} mode="manage" />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/tables"
-          element={
-            <AdminRoute isAdmin={isAdmin}>
-              <TablesDashboard token={adminToken} />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/products/add"
-          element={
-            <AdminRoute isAdmin={isAdmin}>
-              <AddProduct token={adminToken} />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/products/edit"
-          element={
-            <AdminRoute isAdmin={isAdmin}>
-              <MenuManagement token={adminToken} mode="edit" />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/products/:id"
-          element={
-            <AdminRoute isAdmin={isAdmin}>
-              <EditProduct token={adminToken} />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/menu"
-          element={<Navigate to="/admin/products" replace />}
-        />
-
-        <Route
-          path="/admin/add-product"
-          element={<Navigate to="/admin/products/add" replace />}
-        />
-
-        <Route
-          path="/admin/edit-product"
-          element={<Navigate to="/admin/products/edit" replace />}
-        />
-
-        <Route
-          path="/admin/edit-product/:id"
-          element={<Navigate to="/admin/products/:id" replace />}
-        />
-
-        <Route
-          path="/admin/dashboard"
-          element={<Navigate to="/admin/home" replace />}
-        />
-
-        <Route
-          path="/admin"
-          element={<Navigate to="/admin/home" replace />}
-        />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={`/restaurant/${DEFAULT_RESTAURANT}`} replace />} />
 
       </Routes>
 
       <Footer />
+    </>
+  );
+}
 
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

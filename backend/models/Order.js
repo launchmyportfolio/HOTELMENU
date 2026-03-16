@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema({
 
+  restaurantId: {
+    type: String,
+    required: true,
+    index: true,
+    default: process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant"
+  },
+
   tableNumber: {
     type: Number,
     required: true

@@ -3,15 +3,16 @@ import { Link } from "react-router-dom";
 import "../styles/Admin.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
-export default function MenuManagement({ token, mode = "manage" }) {
+export default function MenuManagement({ token, mode = "manage", restaurantId }) {
 
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
 
   async function fetchMenu() {
     try {
-      const res = await fetch(`${API_BASE}/api/menu`);
+      const res = await fetch(`${API_BASE}/api/menu?restaurantId=${restaurantId || DEFAULT_RESTAURANT}`);
       const data = await res.json();
       setItems(data);
       setError("");
@@ -22,7 +23,7 @@ export default function MenuManagement({ token, mode = "manage" }) {
 
   useEffect(() => {
     fetchMenu();
-  }, []);
+  }, [restaurantId]);
 
   async function toggleAvailability(id, available) {
     try {
@@ -91,7 +92,7 @@ export default function MenuManagement({ token, mode = "manage" }) {
                   {item.available ? "Mark Out of Stock" : "Mark Available"}
                 </button>
 
-                <Link className="ghost-btn" to={`/admin/products/${item._id}`}>
+                <Link className="ghost-btn" to={`/owner/products/${item._id}`}>
                   Edit
                 </Link>
 

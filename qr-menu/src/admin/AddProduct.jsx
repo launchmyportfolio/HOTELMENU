@@ -4,7 +4,7 @@ import "../styles/Admin.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export default function AddProduct({ token }) {
+export default function AddProduct({ token, restaurantId }) {
 
   const [form, setForm] = useState({
     name: "",
@@ -32,6 +32,7 @@ export default function AddProduct({ token }) {
 
     try {
       const payload = { ...form, price: Number(form.price) };
+      if (restaurantId) payload.restaurantId = restaurantId;
       const res = await fetch(`${API_BASE}/api/menu`, {
         method: "POST",
         headers: {
@@ -43,7 +44,7 @@ export default function AddProduct({ token }) {
 
       if (!res.ok) throw new Error("Unable to add product");
 
-      navigate("/admin/products");
+      navigate("/owner/products");
     } catch (err) {
       setError(err.message);
     }

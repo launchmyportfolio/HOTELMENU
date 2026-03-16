@@ -6,21 +6,23 @@ const Table = require("../models/Table");
 
 const router = express.Router();
 const DEFAULT_TABLES = Number(process.env.DEFAULT_TABLES || 10);
+const DEFAULT_RESTAURANT = process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant";
+const { sessionLimiter } = require("../middleware/rateLimiters");
 
-async function ensureTables() {
-  const count = await Table.countDocuments();
+async function ensureTables(restaurantId = DEFAULT_RESTAURANT) {
+  const count = await Table.countDocuments({ restaurantId });
   if (count === 0) {
-    const seed = Array.from({ length: DEFAULT_TABLES }, (_, i) => ({ tableNumber: i + 1 }));
+    const seed = Array.from({ length: DEFAULT_TABLES }, (_, i) => ({ tableNumber: i + 1, restaurantId }));
     await Table.insertMany(seed);
   }
 }
 
 // Start a new session for a table
-router.post("/start", async (req, res) => {
+router.post("/start", sessionLimiter, async (req, res) => {
 
   try {
 
-    const { tableNumber, customerName, phoneNumber } = req.body;
+    const { tableNumber, customerName, phoneNumber, restaurantId = DEFAULT_RESTAURANT } = req.body;
 
     if (!tableNumber || !customerName || !phoneNumber) {
       return res.status(400).json({ error: "Table number, name, and phone are required." });
@@ -28,14 +30,14 @@ router.post("/start", async (req, res) => {
 
     const numericTable = Number(tableNumber);
 
-    const existing = await CustomerSession.findOne({ tableNumber: numericTable, active: true });
+    const existing = await CustomerSession.findOne({ restaurantId, tableNumber: numericTable, active: true });
     if (existing) {
       return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
     }
 
-    await ensureTables();
+    await ensureTables(restaurantId);
 
-    const table = await Table.findOne({ tableNumber: numericTable });
+    const table = await Table.findOne({ restaurantId, tableNumber: numericTable });
     if (!table) {
       return res.status(400).json({ error: "Invalid table QR code." });
     }
@@ -50,15 +52,17 @@ router.post("/start", async (req, res) => {
       tableNumber: numericTable,
       customerName,
       phoneNumber,
-      sessionId
+      sessionId,
+      restaurantId
     });
 
     await session.save();
 
     await Table.findOneAndUpdate(
-      { tableNumber: numericTable },
+      { restaurantId, tableNumber: numericTable },
       {
         tableNumber: numericTable,
+        restaurantId,
         status: "occupied",
         customerName,
         phoneNumber,
@@ -78,11 +82,11 @@ router.post("/start", async (req, res) => {
 
 
 // End an active session
-router.post("/end", async (req, res) => {
+router.post("/end", sessionLimiter, async (req, res) => {
 
   try {
 
-    const { tableNumber, sessionId } = req.body;
+    const { tableNumber, sessionId, restaurantId = DEFAULT_RESTAURANT } = req.body;
 
     if (!tableNumber || !sessionId) {
       return res.status(400).json({ error: "Table number and sessionId are required." });
@@ -91,7 +95,7 @@ router.post("/end", async (req, res) => {
     const numericTable = Number(tableNumber);
 
     const session = await CustomerSession.findOneAndUpdate(
-      { tableNumber: numericTable, sessionId, active: true },
+      { restaurantId, tableNumber: numericTable, sessionId, active: true },
       { active: false, endedAt: new Date() },
       { new: true }
     );
@@ -101,7 +105,7 @@ router.post("/end", async (req, res) => {
     }
 
     await Table.findOneAndUpdate(
-      { tableNumber: numericTable },
+      { restaurantId, tableNumber: numericTable },
       {
         status: "free",
         customerName: "",
@@ -126,13 +130,14 @@ router.get("/:tableNumber", async (req, res) => {
   try {
 
     const numericTable = Number(req.params.tableNumber);
+    const restaurantId = req.query.restaurantId || DEFAULT_RESTAURANT;
 
-    const table = await Table.findOne({ tableNumber: numericTable });
+    const table = await Table.findOne({ restaurantId, tableNumber: numericTable });
     if (!table) {
       return res.json({ active: false, tableExists: false });
     }
 
-    const session = await CustomerSession.findOne({ tableNumber: numericTable, active: true });
+    const session = await CustomerSession.findOne({ restaurantId, tableNumber: numericTable, active: true });
 
     if (!session) {
       return res.json({

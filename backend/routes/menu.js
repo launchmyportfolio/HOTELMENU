@@ -1,13 +1,14 @@
 const express = require("express");
 const MenuItem = require("../models/MenuItem");
-const isAdmin = require("../middleware/isAdmin");
+const verifyOwnerToken = require("../middleware/verifyOwnerToken");
 
 const router = express.Router();
 
 // Get all menu items (public)
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const items = await MenuItem.find().sort({ createdAt: -1 });
+    const restaurantId = req.query.restaurantId || process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant";
+    const items = await MenuItem.find({ restaurantId }).sort({ createdAt: -1 });
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -26,9 +27,9 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create menu item (admin)
-router.post("/", isAdmin, async (req, res) => {
+router.post("/", verifyOwnerToken, async (req, res) => {
   try {
-    const item = new MenuItem(req.body);
+    const item = new MenuItem({ ...req.body, restaurantId: req.owner.restaurantId });
     await item.save();
     res.status(201).json(item);
   } catch (err) {
@@ -37,10 +38,10 @@ router.post("/", isAdmin, async (req, res) => {
 });
 
 // Update menu item (admin)
-router.put("/:id", isAdmin, async (req, res) => {
+router.put("/:id", verifyOwnerToken, async (req, res) => {
   try {
     const item = await MenuItem.findByIdAndUpdate(
-      req.params.id,
+      { _id: req.params.id, restaurantId: req.owner.restaurantId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -54,9 +55,9 @@ router.put("/:id", isAdmin, async (req, res) => {
 });
 
 // Delete menu item (admin)
-router.delete("/:id", isAdmin, async (req, res) => {
+router.delete("/:id", verifyOwnerToken, async (req, res) => {
   try {
-    const item = await MenuItem.findByIdAndDelete(req.params.id);
+    const item = await MenuItem.findOneAndDelete({ _id: req.params.id, restaurantId: req.owner.restaurantId });
     if (!item) return res.status(404).json({ error: "Item not found" });
     res.json({ message: "Item deleted" });
   } catch (err) {

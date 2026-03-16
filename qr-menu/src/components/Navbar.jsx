@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
+import { useRestaurantIdFromPath } from "../context/CustomerSessionContext";
 
-export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
+export default function Navbar({ isAdmin, onLogout, session, onEndSession, adminMode = false }) {
 
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/admin-login";
+  const restaurantId = useRestaurantIdFromPath(location.pathname);
+  const isLoginPage = location.pathname.includes("/login");
 
   useEffect(() => {
     function handleResize() {
@@ -33,13 +35,23 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
   }
 
   function renderLinks() {
+    if (isAdmin && adminMode) {
+      return (
+        <>
+          <Link className="nav-link" to="/admin/restaurants">Restaurants</Link>
+          <Link className="nav-link" to="/admin/restaurants/new">Create Restaurant</Link>
+          <button className="nav-btn" onClick={onLogout}>Logout</button>
+        </>
+      );
+    }
+
     if (isAdmin) {
       return (
         <>
-          <Link className="nav-link" to="/admin/orders">Orders</Link>
-          <Link className="nav-link" to="/admin/tables">Tables</Link>
-          <Link className="nav-link" to="/admin/products">Products</Link>
-          <Link className="nav-link" to="/admin/products/add">Add Product</Link>
+          <Link className="nav-link" to="/owner/orders">Orders</Link>
+          <Link className="nav-link" to="/owner/tables">Tables</Link>
+          <Link className="nav-link" to="/owner/products">Products</Link>
+          <Link className="nav-link" to="/owner/products/add">Add Product</Link>
           <button className="nav-btn" onClick={onLogout}>Logout</button>
         </>
       );
@@ -47,10 +59,10 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
 
     return (
       <>
-        <Link className="nav-link" to="/">Home</Link>
-        <Link className="nav-link" to="/items">Items</Link>
-        <Link className="nav-link" to="/contact">Contact</Link>
-        <Link className="nav-link" to="/cart">Cart</Link>
+        <Link className="nav-link" to={`/restaurant/${restaurantId}`}>Home</Link>
+        <Link className="nav-link" to={`/restaurant/${restaurantId}/items`}>Items</Link>
+        <Link className="nav-link" to={`/restaurant/${restaurantId}/contact`}>Contact</Link>
+        <Link className="nav-link" to={`/restaurant/${restaurantId}/cart`}>Cart</Link>
         {session && (
           <>
             <span className="session-tag">

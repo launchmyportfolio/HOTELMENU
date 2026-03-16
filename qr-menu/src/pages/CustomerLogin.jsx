@@ -1,16 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./CustomerLogin.css";
+import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function CustomerLogin({ onLogin, session }) {
 
+  const params = useParams();
+  const location = useLocation();
+  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
   const paramsTable = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const t = Number(params.get("table"));
     return Number.isFinite(t) && t > 0 ? t : null;
-  }, []);
+  }, [location.search]);
+
+  const { setSession } = useCustomerSession();
 
   const [form, setForm] = useState({
     customerName: "",
@@ -27,16 +34,16 @@ export default function CustomerLogin({ onLogin, session }) {
 
   useEffect(() => {
     if (session) {
-      navigate("/items", { replace: true });
+      navigate(`/restaurant/${restaurantId}/items`, { replace: true });
     }
-  }, [session, navigate]);
+  }, [session, navigate, restaurantId]);
 
   useEffect(() => {
     async function checkTable() {
       if (!paramsTable) return;
       setTableInfo(prev => ({ ...prev, loading: true }));
       try {
-        const res = await fetch(`${API_BASE}/api/customer/session/${paramsTable}`);
+        const res = await fetch(`${API_BASE}/api/customer/session/${paramsTable}?restaurantId=${restaurantId}`);
         const data = await res.json();
 
         setTableInfo({
@@ -80,6 +87,7 @@ export default function CustomerLogin({ onLogin, session }) {
     setError("");
 
     const payload = {
+      restaurantId,
       tableNumber: paramsTable,
       customerName: form.customerName.trim(),
       phoneNumber: form.phoneNumber.trim()
@@ -106,14 +114,18 @@ export default function CustomerLogin({ onLogin, session }) {
         throw new Error(data.error || "Unable to start session.");
       }
 
-      onLogin({
+      const newSession = {
+        restaurantId,
         tableNumber: data.tableNumber,
         customerName: data.customerName,
         phoneNumber: data.phoneNumber,
         sessionId: data.sessionId
-      });
+      };
 
-      navigate("/items", { replace: true });
+      setSession(newSession);
+      onLogin?.(newSession);
+
+      navigate(`/restaurant/${restaurantId}/items`, { replace: true });
 
     } catch (err) {
       setError(err.message);
@@ -139,7 +151,7 @@ export default function CustomerLogin({ onLogin, session }) {
 
         {paramsTable && (
           <p className="muted" style={{ marginBottom: "8px" }}>
-            Table: <strong>{paramsTable}</strong>
+            Table: <strong>{paramsTable}</strong> • Restaurant: <strong>{restaurantId}</strong>
           </p>
         )}
 

@@ -7,10 +7,10 @@ export default function AdminHome({ onLogout }) {
   const navigate = useNavigate();
 
   const cards = useMemo(() => ([
-    { title: "Orders", description: "View and update restaurant orders", path: "/admin/orders" },
-    { title: "Tables", description: "Monitor and free tables", path: "/admin/tables" },
-    { title: "Products", description: "Manage the menu items", path: "/admin/products" },
-    { title: "Add Product", description: "Create a new menu item", path: "/admin/products/add" }
+    { title: "Orders", description: "View and update restaurant orders", path: "/owner/orders" },
+    { title: "Tables", description: "Monitor and free tables", path: "/owner/tables" },
+    { title: "Products", description: "Manage the menu items", path: "/owner/products" },
+    { title: "Add Product", description: "Create a new menu item", path: "/owner/products/add" }
   ]), [navigate, onLogout]);
 
   function handleClick(card) {
@@ -20,7 +20,7 @@ export default function AdminHome({ onLogout }) {
 
   return (
     <div className="admin-dashboard">
-      <h1>Admin Home</h1>
+      <h1>Owner Dashboard</h1>
 
       <div className="admin-home-grid">
         {cards.map(card => (

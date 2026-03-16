@@ -3,11 +3,12 @@ const router = express.Router();
 const Order = require("../models/Order");
 const CustomerSession = require("../models/CustomerSession");
 const Table = require("../models/Table");
-const isAdmin = require("../middleware/isAdmin");
+const verifyOwnerToken = require("../middleware/verifyOwnerToken");
+const { ordersLimiter } = require("../middleware/rateLimiters");
+const { emitNewOrder } = require("../socketEmitter");
 
-
-// 1️⃣ Place Order
-router.post("/", async (req, res) => {
+// 1️⃣ Place Order (customer)
+router.post("/", ordersLimiter, async (req, res) => {
 
   try {
 
@@ -17,14 +18,17 @@ router.post("/", async (req, res) => {
       phoneNumber,
       sessionId,
       items,
-      total
+      total,
+      restaurantId: reqRestaurantId
     } = req.body;
+    const restaurantId = reqRestaurantId || process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
-    if (!tableNumber || !customerName || !phoneNumber || !sessionId) {
-      return res.status(400).json({ error: "Table number, customer name, phone, and sessionId are required." });
+    if (!tableNumber || !customerName || !phoneNumber || !sessionId || !restaurantId) {
+      return res.status(400).json({ error: "restaurantId, table number, customer name, phone, and sessionId are required." });
     }
 
     const activeSession = await CustomerSession.findOne({
+      restaurantId,
       tableNumber: Number(tableNumber),
       sessionId,
       active: true
@@ -40,12 +44,13 @@ router.post("/", async (req, res) => {
       phoneNumber,
       sessionId,
       items,
-      total
+      total,
+      restaurantId
     });
     await order.save();
 
     await Table.findOneAndUpdate(
-      { tableNumber: Number(tableNumber) },
+      { restaurantId, tableNumber: Number(tableNumber) },
       {
         status: "occupied",
         customerName,
@@ -56,6 +61,7 @@ router.post("/", async (req, res) => {
       { upsert: true }
     );
 
+    emitNewOrder(order);
     res.json(order);
 
   } catch (err) {
@@ -65,12 +71,12 @@ router.post("/", async (req, res) => {
 });
 
 
-// 2️⃣ Get All Orders (Admin)
-router.get("/", isAdmin, async (req, res) => {
+// 2️⃣ Get All Orders (Owner)
+router.get("/", verifyOwnerToken, async (req, res) => {
 
   try {
 
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find({ restaurantId: req.owner.restaurantId }).sort({ createdAt: -1 });
 
     res.json(orders);
 
@@ -93,23 +99,23 @@ router.get("/:id", async (req, res) => {
 
 
 // 3️⃣ Update Order Status
-router.patch("/:id", isAdmin, async (req, res) => {
+router.patch("/:id", verifyOwnerToken, async (req, res) => {
 
   try {
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, restaurantId: req.owner.restaurantId },
       { status: req.body.status },
       { new: true }
     );
 
     if (order && req.body.status === "Completed") {
       await CustomerSession.findOneAndUpdate(
-        { tableNumber: order.tableNumber, active: true },
+        { restaurantId: order.restaurantId, tableNumber: order.tableNumber, active: true },
         { active: false, endedAt: new Date() }
       );
       await Table.findOneAndUpdate(
-        { tableNumber: order.tableNumber },
+        { restaurantId: order.restaurantId, tableNumber: order.tableNumber },
         {
           status: "free",
           customerName: "",
@@ -129,11 +135,11 @@ router.patch("/:id", isAdmin, async (req, res) => {
 });
 
 // 4️⃣ Delete Order
-router.delete("/:id", isAdmin, async (req, res) => {
+router.delete("/:id", verifyOwnerToken, async (req, res) => {
 
   try {
 
-    await Order.findByIdAndDelete(req.params.id);
+    await Order.findOneAndDelete({ _id: req.params.id, restaurantId: req.owner.restaurantId });
 
     res.json({ message: "Order deleted successfully" });
 

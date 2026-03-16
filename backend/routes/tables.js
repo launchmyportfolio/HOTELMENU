@@ -1,19 +1,42 @@
 const express = require("express");
 const Table = require("../models/Table");
-const isAdmin = require("../middleware/isAdmin");
+const verifyOwnerToken = require("../middleware/verifyOwnerToken");
 
 const router = express.Router();
 
 const DEFAULT_TABLES = Number(process.env.DEFAULT_TABLES || 10);
+const DEFAULT_RESTAURANT = process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant";
+let indexesFixed = false;
 
-async function ensureTables(minCount = DEFAULT_TABLES) {
-  const existing = await Table.countDocuments();
+async function ensureIndexes() {
+  if (indexesFixed) return;
+  try {
+    // remove legacy unique index on tableNumber
+    await Table.collection.dropIndex("tableNumber_1").catch(() => {});
+    await Table.collection.createIndex({ restaurantId: 1, tableNumber: 1 }, { unique: true });
+    indexesFixed = true;
+  } catch (_err) {
+    // ignore, will retry on next call
+  }
+}
+
+async function normalizeExistingTables() {
+  await Table.updateMany(
+    { $or: [{ restaurantId: { $exists: false } }, { restaurantId: null }] },
+    { $set: { restaurantId: DEFAULT_RESTAURANT } }
+  );
+}
+
+async function ensureTables(restaurantId, minCount = DEFAULT_TABLES) {
+  await ensureIndexes();
+  await normalizeExistingTables();
+  const existing = await Table.countDocuments({ restaurantId });
   if (existing >= minCount) return;
-  const existingNumbers = new Set((await Table.find({}, "tableNumber")).map(t => t.tableNumber));
+  const existingNumbers = new Set((await Table.find({ restaurantId }, "tableNumber")).map(t => t.tableNumber));
   const toCreate = [];
   for (let i = 1; i <= minCount; i += 1) {
     if (!existingNumbers.has(i)) {
-      toCreate.push({ tableNumber: i });
+      toCreate.push({ tableNumber: i, restaurantId });
     }
   }
   if (toCreate.length) {
@@ -22,10 +45,11 @@ async function ensureTables(minCount = DEFAULT_TABLES) {
 }
 
 // List tables
-router.get("/", isAdmin, async (_req, res) => {
+router.get("/", verifyOwnerToken, async (req, res) => {
   try {
-    await ensureTables();
-    const tables = await Table.find().sort({ tableNumber: 1 });
+    const { restaurantId } = req.owner;
+    await ensureTables(restaurantId);
+    const tables = await Table.find({ restaurantId }).sort({ tableNumber: 1 });
     res.json(tables);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -33,11 +57,12 @@ router.get("/", isAdmin, async (_req, res) => {
 });
 
 // Summary
-router.get("/summary", isAdmin, async (_req, res) => {
+router.get("/summary", verifyOwnerToken, async (req, res) => {
   try {
-    await ensureTables();
-    const total = await Table.countDocuments();
-    const occupied = await Table.countDocuments({ status: "occupied" });
+    const { restaurantId } = req.owner;
+    await ensureTables(restaurantId);
+    const total = await Table.countDocuments({ restaurantId });
+    const occupied = await Table.countDocuments({ restaurantId, status: "occupied" });
     const free = total - occupied;
     res.json({ total, occupied, free });
   } catch (err) {
@@ -46,7 +71,7 @@ router.get("/summary", isAdmin, async (_req, res) => {
 });
 
 // Configure total tables
-router.post("/config", isAdmin, async (req, res) => {
+router.post("/config", verifyOwnerToken, async (req, res) => {
   try {
     const { totalTables } = req.body;
     const total = Number(totalTables);
@@ -54,17 +79,21 @@ router.post("/config", isAdmin, async (req, res) => {
       return res.status(400).json({ error: "totalTables must be a positive number" });
     }
 
-    await ensureTables(total);
+    await ensureTables(req.owner.restaurantId, total);
 
     // If reducing, ensure no occupied tables above the new total
-    const occupiedAbove = await Table.find({ tableNumber: { $gt: total }, status: "occupied" });
+    const occupiedAbove = await Table.find({
+      restaurantId: req.owner.restaurantId,
+      tableNumber: { $gt: total },
+      status: "occupied"
+    });
     if (occupiedAbove.length) {
       return res.status(400).json({ error: "Cannot reduce tables while higher-numbered tables are occupied." });
     }
 
-    await Table.deleteMany({ tableNumber: { $gt: total } });
+    await Table.deleteMany({ restaurantId: req.owner.restaurantId, tableNumber: { $gt: total } });
 
-    const tables = await Table.find().sort({ tableNumber: 1 });
+    const tables = await Table.find({ restaurantId: req.owner.restaurantId }).sort({ tableNumber: 1 });
     res.json({ message: "Table configuration updated", tables });
 
   } catch (err) {
@@ -73,11 +102,11 @@ router.post("/config", isAdmin, async (req, res) => {
 });
 
 // Force free a table
-router.post("/:tableNumber/free", isAdmin, async (req, res) => {
+router.post("/:tableNumber/free", verifyOwnerToken, async (req, res) => {
   try {
     const tableNumber = Number(req.params.tableNumber);
     const table = await Table.findOneAndUpdate(
-      { tableNumber },
+      { restaurantId: req.owner.restaurantId, tableNumber },
       {
         status: "free",
         activeSession: false,
@@ -95,17 +124,17 @@ router.post("/:tableNumber/free", isAdmin, async (req, res) => {
 });
 
 // Helper to update a table when session changes
-router.post("/sync/session", isAdmin, async (req, res) => {
+router.post("/sync/session", verifyOwnerToken, async (req, res) => {
   try {
     const { tableNumber, status, customerName = "", phoneNumber = "" } = req.body;
     if (!tableNumber || !status) {
       return res.status(400).json({ error: "tableNumber and status are required" });
     }
 
-    await ensureTables(tableNumber);
+    await ensureTables(req.owner.restaurantId, tableNumber);
 
     const table = await Table.findOneAndUpdate(
-      { tableNumber: Number(tableNumber) },
+      { restaurantId: req.owner.restaurantId, tableNumber: Number(tableNumber) },
       {
         status,
         customerName,

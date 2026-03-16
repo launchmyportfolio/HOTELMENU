@@ -1,13 +1,18 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import "./Cart.css";
+import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function Cart({ session }) {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams();
+  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const { session: ctxSession } = useCustomerSession();
   const [error, setError] = useState("");
   const [cart, setCart] = useState(() => location.state?.cart || []);
 
@@ -36,8 +41,10 @@ export default function Cart({ session }) {
 
     setError("");
 
-    if (!session) {
-      navigate("/login");
+    const activeSession = session || ctxSession;
+
+    if (!activeSession) {
+      navigate(`/restaurant/${restaurantId}/login`);
       return;
     }
 
@@ -47,10 +54,11 @@ export default function Cart({ session }) {
     }
 
     const orderData = {
-      tableNumber: session.tableNumber,
-      customerName: session.customerName,
-      phoneNumber: session.phoneNumber,
-      sessionId: session.sessionId,
+      restaurantId,
+      tableNumber: activeSession.tableNumber,
+      customerName: activeSession.customerName,
+      phoneNumber: activeSession.phoneNumber,
+      sessionId: activeSession.sessionId,
       items: cart.map(item => ({
         name: item.name,
         price: item.price,
@@ -79,7 +87,7 @@ export default function Cart({ session }) {
 
       console.log("Server response:", data);
 
-      navigate("/status", { state: { orderId: data._id } });
+      navigate(`/restaurant/${restaurantId}/status`, { state: { orderId: data._id } });
 
     } catch (error) {
       console.error("Order failed:", error);

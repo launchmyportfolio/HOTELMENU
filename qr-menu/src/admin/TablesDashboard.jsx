@@ -7,8 +7,9 @@ import "../styles/Admin.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const TABLE_URL_BASE = (import.meta.env.VITE_PUBLIC_MENU_URL || "https://hotelmenu-4iv.pages.dev").replace(/\/$/, "");
+const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
-export default function TablesDashboard({ token }) {
+export default function TablesDashboard({ token, restaurantId }) {
 
   const [tables, setTables] = useState([]);
   const [summary, setSummary] = useState({ total: 0, occupied: 0, free: 0 });
@@ -48,7 +49,8 @@ export default function TablesDashboard({ token }) {
   }, [token]);
 
   function getTableUrl(tableNumber) {
-    return `${TABLE_URL_BASE}/?table=${tableNumber}`;
+    const rid = restaurantId || DEFAULT_RESTAURANT;
+    return `${TABLE_URL_BASE}/restaurant/${rid}?table=${tableNumber}`;
   }
 
   function setCardRef(tableNumber, node) {
