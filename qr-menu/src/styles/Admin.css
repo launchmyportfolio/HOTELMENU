@@ -400,6 +400,38 @@ cursor:pointer;
   margin-bottom:14px;
 }
 
+/* Admin Home */
+.admin-home-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+  position:relative;
+  z-index:1;
+}
+
+.admin-home-card{
+  background:rgba(255,255,255,0.95);
+  border-radius:14px;
+  padding:18px 20px;
+  box-shadow:0 10px 24px rgba(0,0,0,0.2);
+  cursor:pointer;
+  transition:transform 120ms ease, box-shadow 120ms ease;
+  border:2px solid rgba(255,107,0,0.15);
+}
+
+.admin-home-card h3{
+  margin:0 0 8px;
+  color:#ff6b00;
+}
+
+.admin-home-card:hover,
+.admin-home-card:focus-visible{
+  transform:translateY(-4px);
+  box-shadow:0 14px 30px rgba(0,0,0,0.28);
+  outline:none;
+  border-color:#ff6b00;
+}
+
 .table-form input{
   padding:10px;
   border-radius:8px;

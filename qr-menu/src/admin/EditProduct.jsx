@@ -57,7 +57,7 @@ export default function EditProduct({ token }) {
 
       if (!res.ok) throw new Error("Update failed");
 
-      navigate("/admin/menu");
+      navigate("/admin/products");
     } catch (err) {
       setError(err.message);
     }

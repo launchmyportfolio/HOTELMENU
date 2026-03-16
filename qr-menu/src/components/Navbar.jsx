@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
 export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
 
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login" || location.pathname === "/admin-login";
 
   useEffect(() => {
     function handleResize() {
@@ -20,14 +22,24 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
     if (!isMobile) setMenuOpen(false);
   }, [isMobile]);
 
+  if (isLoginPage) {
+    return (
+      <nav className="nav">
+        <div className="nav-left">
+          <h2 className="logo">HotelMenu</h2>
+        </div>
+      </nav>
+    );
+  }
+
   function renderLinks() {
     if (isAdmin) {
       return (
         <>
           <Link className="nav-link" to="/admin/orders">Orders</Link>
           <Link className="nav-link" to="/admin/tables">Tables</Link>
-          <Link className="nav-link" to="/admin/add-product">Add Product</Link>
-          <Link className="nav-link" to="/admin/edit-product">Edit Product</Link>
+          <Link className="nav-link" to="/admin/products">Products</Link>
+          <Link className="nav-link" to="/admin/products/add">Add Product</Link>
           <button className="nav-btn" onClick={onLogout}>Logout</button>
         </>
       );
@@ -38,7 +50,7 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession }) {
         <Link className="nav-link" to="/">Home</Link>
         <Link className="nav-link" to="/items">Items</Link>
         <Link className="nav-link" to="/contact">Contact</Link>
-        <Link className="nav-link" to="/admin/login">Admin</Link>
+        <Link className="nav-link" to="/cart">Cart</Link>
         {session && (
           <>
             <span className="session-tag">

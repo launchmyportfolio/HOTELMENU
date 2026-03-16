@@ -43,7 +43,7 @@ export default function AddProduct({ token }) {
 
       if (!res.ok) throw new Error("Unable to add product");
 
-      navigate("/admin/menu");
+      navigate("/admin/products");
     } catch (err) {
       setError(err.message);
     }

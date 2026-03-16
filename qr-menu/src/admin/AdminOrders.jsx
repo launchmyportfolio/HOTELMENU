@@ -4,7 +4,7 @@ import "../styles/Admin.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export default function AdminDashboard({ token }){
+export default function AdminOrders({ token }){
 
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");

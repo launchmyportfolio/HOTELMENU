@@ -95,7 +95,7 @@ router.post("/:tableNumber/free", isAdmin, async (req, res) => {
 });
 
 // Helper to update a table when session changes
-router.post("/sync/session", async (req, res) => {
+router.post("/sync/session", isAdmin, async (req, res) => {
   try {
     const { tableNumber, status, customerName = "", phoneNumber = "" } = req.body;
     if (!tableNumber || !status) {

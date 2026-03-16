@@ -91,7 +91,7 @@ export default function MenuManagement({ token, mode = "manage" }) {
                   {item.available ? "Mark Out of Stock" : "Mark Available"}
                 </button>
 
-                <Link className="ghost-btn" to={`/admin/edit-product/${item._id}`}>
+                <Link className="ghost-btn" to={`/admin/products/${item._id}`}>
                   Edit
                 </Link>
 

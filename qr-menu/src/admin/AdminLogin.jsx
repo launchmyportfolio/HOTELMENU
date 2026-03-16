@@ -13,7 +13,7 @@ export default function AdminLogin({ onLogin, isAdmin }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAdmin) navigate("/admin/dashboard");
+    if (isAdmin) navigate("/admin/home");
   }, [isAdmin, navigate]);
 
   async function handleLogin(e) {
@@ -34,7 +34,7 @@ export default function AdminLogin({ onLogin, isAdmin }) {
 
       const data = await res.json();
       onLogin(data.token);
-      navigate("/admin/dashboard");
+      navigate("/admin/home");
 
     } catch (err) {
       setError(err.message || "Login failed");

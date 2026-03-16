@@ -17,7 +17,12 @@ export default function CustomerLogin({ onLogin, session }) {
     phoneNumber: ""
   });
 
-  const [error, setError] = useState(paramsTable ? "" : "Invalid table QR code.");
+  const [error, setError] = useState("");
+  const [tableInfo, setTableInfo] = useState({
+    loading: Boolean(paramsTable),
+    tableExists: paramsTable ? null : false,
+    tableStatus: "unknown"
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +31,37 @@ export default function CustomerLogin({ onLogin, session }) {
     }
   }, [session, navigate]);
 
+  useEffect(() => {
+    async function checkTable() {
+      if (!paramsTable) return;
+      setTableInfo(prev => ({ ...prev, loading: true }));
+      try {
+        const res = await fetch(`${API_BASE}/api/customer/session/${paramsTable}`);
+        const data = await res.json();
+
+        setTableInfo({
+          loading: false,
+          tableExists: data.tableExists !== false,
+          tableStatus: data.tableStatus || (data.active ? "occupied" : "free"),
+          active: Boolean(data.active)
+        });
+
+        if (data.tableExists === false) {
+          setError("Invalid table QR code.");
+        } else if (data.tableStatus === "occupied" || data.active) {
+          setError("This table is currently in use.");
+        } else {
+          setError("");
+        }
+      } catch (err) {
+        setTableInfo(prev => ({ ...prev, loading: false }));
+        setError("Unable to verify table. Please retry.");
+      }
+    }
+
+    checkTable();
+  }, [paramsTable]);
+
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -33,8 +69,12 @@ export default function CustomerLogin({ onLogin, session }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!paramsTable) {
+    if (!paramsTable || tableInfo.tableExists === false) {
       setError("Invalid table QR code.");
+      return;
+    }
+    if (tableInfo.tableStatus === "occupied" || tableInfo.active) {
+      setError("This table is currently in use.");
       return;
     }
     setError("");
@@ -89,7 +129,13 @@ export default function CustomerLogin({ onLogin, session }) {
       <div className="login-card">
 
         <h1>Start Your Order</h1>
-        <p className="login-subtext">Scan the QR at your table to continue.</p>
+        <p className="login-subtext">
+          {!paramsTable || tableInfo.tableExists === false
+            ? "Scan the QR at your table to continue."
+            : tableInfo.tableStatus === "occupied" || tableInfo.active
+              ? "This table is currently in use."
+              : "Welcome to Hotel Menu\nPlease enter your details to start ordering"}
+        </p>
 
         {paramsTable && (
           <p className="muted" style={{ marginBottom: "8px" }}>
@@ -123,7 +169,17 @@ export default function CustomerLogin({ onLogin, session }) {
             />
           </label>
 
-          <button type="submit" className="login-btn" disabled={!paramsTable}>
+          <button
+            type="submit"
+            className="login-btn"
+            disabled={
+              !paramsTable ||
+              tableInfo.tableExists === false ||
+              tableInfo.tableStatus === "occupied" ||
+              tableInfo.active ||
+              tableInfo.loading
+            }
+          >
             Start Ordering
           </button>
 

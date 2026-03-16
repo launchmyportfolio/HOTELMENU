@@ -127,13 +127,27 @@ router.get("/:tableNumber", async (req, res) => {
 
     const numericTable = Number(req.params.tableNumber);
 
+    const table = await Table.findOne({ tableNumber: numericTable });
+    if (!table) {
+      return res.json({ active: false, tableExists: false });
+    }
+
     const session = await CustomerSession.findOne({ tableNumber: numericTable, active: true });
 
     if (!session) {
-      return res.json({ active: false });
+      return res.json({
+        active: false,
+        tableExists: true,
+        tableStatus: table.status || "free"
+      });
     }
 
-    return res.json({ active: true, session });
+    return res.json({
+      active: true,
+      session,
+      tableExists: true,
+      tableStatus: table.status || "occupied"
+    });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

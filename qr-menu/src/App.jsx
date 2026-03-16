@@ -9,7 +9,8 @@ import Contact from "./pages/Contact";
 import Status from "./pages/Status";
 
 import AdminLogin from "./admin/AdminLogin";
-import AdminDashboard from "./admin/AdminDashboard";
+import AdminHome from "./admin/AdminHome";
+import AdminOrders from "./admin/AdminOrders";
 import MenuManagement from "./admin/MenuManagement";
 import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
@@ -19,7 +20,7 @@ import TablesDashboard from "./admin/TablesDashboard";
 const API_BASE = import.meta.env.VITE_API_URL;
 
 function AdminRoute({ isAdmin, children }) {
-  return isAdmin ? children : <Navigate to="/admin/login" replace />;
+  return isAdmin ? children : <Navigate to="/admin-login" replace />;
 }
 
 function CustomerRoute({ session, children }) {
@@ -181,15 +182,20 @@ function App() {
         />
 
         <Route
-          path="/admin/login"
+          path="/admin-login"
           element={<AdminLogin onLogin={setAdminToken} isAdmin={isAdmin} />}
         />
 
         <Route
-          path="/admin/dashboard"
+          path="/admin/login"
+          element={<Navigate to="/admin-login" replace />}
+        />
+
+        <Route
+          path="/admin/home"
           element={
             <AdminRoute isAdmin={isAdmin}>
-              <AdminDashboard token={adminToken} />
+              <AdminHome onLogout={handleLogout} />
             </AdminRoute>
           }
         />
@@ -198,13 +204,13 @@ function App() {
           path="/admin/orders"
           element={
             <AdminRoute isAdmin={isAdmin}>
-              <AdminDashboard token={adminToken} />
+              <AdminOrders token={adminToken} />
             </AdminRoute>
           }
         />
 
         <Route
-          path="/admin/menu"
+          path="/admin/products"
           element={
             <AdminRoute isAdmin={isAdmin}>
               <MenuManagement token={adminToken} mode="manage" />
@@ -222,7 +228,7 @@ function App() {
         />
 
         <Route
-          path="/admin/add-product"
+          path="/admin/products/add"
           element={
             <AdminRoute isAdmin={isAdmin}>
               <AddProduct token={adminToken} />
@@ -231,7 +237,7 @@ function App() {
         />
 
         <Route
-          path="/admin/edit-product"
+          path="/admin/products/edit"
           element={
             <AdminRoute isAdmin={isAdmin}>
               <MenuManagement token={adminToken} mode="edit" />
@@ -240,12 +246,42 @@ function App() {
         />
 
         <Route
-          path="/admin/edit-product/:id"
+          path="/admin/products/:id"
           element={
             <AdminRoute isAdmin={isAdmin}>
               <EditProduct token={adminToken} />
             </AdminRoute>
           }
+        />
+
+        <Route
+          path="/admin/menu"
+          element={<Navigate to="/admin/products" replace />}
+        />
+
+        <Route
+          path="/admin/add-product"
+          element={<Navigate to="/admin/products/add" replace />}
+        />
+
+        <Route
+          path="/admin/edit-product"
+          element={<Navigate to="/admin/products/edit" replace />}
+        />
+
+        <Route
+          path="/admin/edit-product/:id"
+          element={<Navigate to="/admin/products/:id" replace />}
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={<Navigate to="/admin/home" replace />}
+        />
+
+        <Route
+          path="/admin"
+          element={<Navigate to="/admin/home" replace />}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
