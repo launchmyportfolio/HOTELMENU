@@ -45,7 +45,12 @@ export default function TablesDashboard({ token, restaurantId }) {
   }
 
   useEffect(() => {
-    if (token) fetchTables();
+    if (!token) return undefined;
+
+    fetchTables();
+    const interval = setInterval(fetchTables, 5000);
+
+    return () => clearInterval(interval);
   }, [token]);
 
   function getTableUrl(tableNumber) {

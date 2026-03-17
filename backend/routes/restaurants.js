@@ -63,4 +63,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Fetch restaurant public details by id
+router.get("/:restaurantId", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.restaurantId).lean();
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    return res.json({ _id: restaurant._id, name: restaurant.name });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

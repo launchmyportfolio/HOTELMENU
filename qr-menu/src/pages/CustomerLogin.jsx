@@ -4,13 +4,12 @@ import "./CustomerLogin.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function CustomerLogin({ onLogin, session }) {
 
   const params = useParams();
   const location = useLocation();
-  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const restaurantId = params.restaurantId;
   const paramsTable = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const t = Number(params.get("table"));
@@ -25,6 +24,7 @@ export default function CustomerLogin({ onLogin, session }) {
   });
 
   const [error, setError] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
   const [tableInfo, setTableInfo] = useState({
     loading: Boolean(paramsTable),
     tableExists: paramsTable ? null : false,
@@ -34,9 +34,38 @@ export default function CustomerLogin({ onLogin, session }) {
 
   useEffect(() => {
     if (session) {
-      navigate(`/restaurant/${restaurantId}/items`, { replace: true });
+      const search = paramsTable ? `?table=${paramsTable}` : location.search;
+      navigate(`/restaurant/${restaurantId}/items${search}`, { replace: true });
     }
-  }, [session, navigate, restaurantId]);
+  }, [session, navigate, restaurantId, paramsTable, location.search]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadRestaurant() {
+      try {
+        const res = await fetch(`${API_BASE}/api/restaurants/${restaurantId}`);
+        if (!active) return;
+        if (!res.ok) {
+          setError("Restaurant not found.");
+          navigate("/", { replace: true });
+          return;
+        }
+        const data = await res.json();
+        setRestaurantName(data.name || "");
+      } catch (_err) {
+        if (!active) return;
+        setError("Unable to load restaurant details.");
+      }
+    }
+
+    if (restaurantId) {
+      loadRestaurant();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [restaurantId, navigate]);
 
   useEffect(() => {
     async function checkTable() {
@@ -119,13 +148,15 @@ export default function CustomerLogin({ onLogin, session }) {
         tableNumber: data.tableNumber,
         customerName: data.customerName,
         phoneNumber: data.phoneNumber,
-        sessionId: data.sessionId
+        sessionId: data.sessionId,
+        restaurantName: restaurantName || data.restaurantName || ""
       };
 
       setSession(newSession);
       onLogin?.(newSession);
 
-      navigate(`/restaurant/${restaurantId}/items`, { replace: true });
+      const search = paramsTable ? `?table=${paramsTable}` : location.search;
+      navigate(`/restaurant/${restaurantId}/items${search}`, { replace: true });
 
     } catch (err) {
       setError(err.message);
@@ -151,7 +182,7 @@ export default function CustomerLogin({ onLogin, session }) {
 
         {paramsTable && (
           <p className="muted" style={{ marginBottom: "8px" }}>
-            Table: <strong>{paramsTable}</strong> • Restaurant: <strong>{restaurantId}</strong>
+            Table: <strong>{paramsTable}</strong> • Restaurant: <strong>{restaurantName || "Loading..."}</strong>
           </p>
         )}
 

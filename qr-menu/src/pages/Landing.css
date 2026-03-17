@@ -1,0 +1,165 @@
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+  background: #0d0d0d;
+  color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.landing-hero {
+  position: relative;
+  min-height: 70vh;
+  background-image: linear-gradient(120deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35)), url("../assets/restaurent.jpg");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+}
+
+.landing-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.55));
+}
+
+.landing-content {
+  position: relative;
+  max-width: 880px;
+  text-align: center;
+  z-index: 1;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #ff6b00;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.landing-content h1 {
+  font-size: 48px;
+  margin: 0 0 16px;
+}
+
+.lede {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 auto 28px;
+  max-width: 680px;
+}
+
+.landing-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-ghost {
+  border: 2px solid #ff6b00;
+  color: #ff6b00;
+  padding: 12px 28px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: #ff6b00;
+  color: #0d0d0d;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 0 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.landing-card {
+  background: #141414;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.landing-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #ff6b00;
+}
+
+.landing-card p {
+  color: #dcdcdc;
+  line-height: 1.6;
+}
+
+.landing-card ul {
+  padding-left: 18px;
+  color: #cfcfcf;
+  line-height: 1.5;
+}
+
+.text-link {
+  color: #ffb366;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.pill {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 107, 0, 0.15);
+  color: #ffb366;
+  font-weight: 600;
+}
+
+.landing-features {
+  text-align: center;
+  padding: 0 24px 64px;
+}
+
+.landing-features h3 {
+  margin-bottom: 16px;
+  color: #ff6b00;
+}
+
+.feature-grid {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.feature-chip {
+  background: #1c1c1c;
+  color: #f5f5f5;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+@media (max-width: 640px) {
+  .landing-content h1 {
+    font-size: 36px;
+  }
+
+  .landing-hero {
+    padding: 64px 16px;
+  }
+}

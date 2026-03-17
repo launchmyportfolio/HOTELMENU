@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Items.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function Items() {
 
@@ -13,9 +12,19 @@ export default function Items() {
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
-  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const restaurantId = params.restaurantId;
   const { session } = useCustomerSession();
+
+  const tableNumber = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const t = Number(params.get("table"));
+    if (Number.isFinite(t) && t > 0) return t;
+    return session?.tableNumber || null;
+  }, [location.search, session]);
+
+  const tableQuery = tableNumber ? `?table=${tableNumber}` : "";
 
   useEffect(() => {
     async function fetchMenu() {
@@ -71,7 +80,7 @@ export default function Items() {
   }
 
   function handleCheckout() {
-    navigate(`/restaurant/${restaurantId}/cart`, { state: { cart } });
+    navigate(`/restaurant/${restaurantId}/cart${tableQuery}`, { state: { cart } });
   }
 
   function renderStars(rating = 4.5) {

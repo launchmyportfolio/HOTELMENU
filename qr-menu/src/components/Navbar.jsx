@@ -10,6 +10,18 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession, admin
   const location = useLocation();
   const restaurantId = useRestaurantIdFromPath(location.pathname);
   const isLoginPage = location.pathname.includes("/login");
+  const isLanding = location.pathname === "/";
+  const isAuthPage = isLoginPage || location.pathname === "/owner/register";
+
+  const tableNumber = (() => {
+    const params = new URLSearchParams(location.search);
+    const t = Number(params.get("table"));
+    if (Number.isFinite(t) && t > 0) return t;
+    return session?.tableNumber || null;
+  })();
+
+  const tableSuffix = tableNumber ? `?table=${tableNumber}` : "";
+  const restaurantBase = restaurantId ? `/restaurant/${restaurantId}` : "/";
 
   useEffect(() => {
     function handleResize() {
@@ -35,6 +47,10 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession, admin
   }
 
   function renderLinks() {
+    if (isAuthPage) {
+      return null;
+    }
+
     if (isAdmin && adminMode) {
       return (
         <>
@@ -57,12 +73,22 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession, admin
       );
     }
 
+    if (isLanding) {
+      return (
+        <>
+          <Link className="nav-link" to="/owner/login">Owner Login</Link>
+          <Link className="nav-link" to="/owner/register">Owner Register</Link>
+          <a className="nav-link" href="#customer-access">Customer Access</a>
+        </>
+      );
+    }
+
     return (
       <>
-        <Link className="nav-link" to={`/restaurant/${restaurantId}`}>Home</Link>
-        <Link className="nav-link" to={`/restaurant/${restaurantId}/items`}>Items</Link>
-        <Link className="nav-link" to={`/restaurant/${restaurantId}/contact`}>Contact</Link>
-        <Link className="nav-link" to={`/restaurant/${restaurantId}/cart`}>Cart</Link>
+        <Link className="nav-link" to={`${restaurantBase}${tableSuffix}`}>Home</Link>
+        <Link className="nav-link" to={`${restaurantBase}/items${tableSuffix}`}>Items</Link>
+        <Link className="nav-link" to={`${restaurantBase}/contact${tableSuffix}`}>Contact</Link>
+        <Link className="nav-link" to={`${restaurantBase}/cart${tableSuffix}`}>Cart</Link>
         {session && (
           <>
             <span className="session-tag">

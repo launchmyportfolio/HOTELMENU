@@ -4,17 +4,25 @@ import "./Cart.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function Cart({ session }) {
 
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
-  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const restaurantId = params.restaurantId;
   const { session: ctxSession } = useCustomerSession();
   const [error, setError] = useState("");
   const [cart, setCart] = useState(() => location.state?.cart || []);
+
+  const tableNumber = useMemo(() => {
+    const query = new URLSearchParams(location.search);
+    const t = Number(query.get("table"));
+    if (Number.isFinite(t) && t > 0) return t;
+    return ctxSession?.tableNumber || session?.tableNumber || null;
+  }, [location.search, ctxSession, session]);
+
+  const tableQuery = tableNumber ? `?table=${tableNumber}` : "";
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -44,7 +52,7 @@ export default function Cart({ session }) {
     const activeSession = session || ctxSession;
 
     if (!activeSession) {
-      navigate(`/restaurant/${restaurantId}/login`);
+      navigate(`/restaurant/${restaurantId}/login${tableQuery}`);
       return;
     }
 
@@ -87,7 +95,7 @@ export default function Cart({ session }) {
 
       console.log("Server response:", data);
 
-      navigate(`/restaurant/${restaurantId}/status`, { state: { orderId: data._id } });
+      navigate(`/restaurant/${restaurantId}/status${tableQuery}`, { state: { orderId: data._id } });
 
     } catch (error) {
       console.error("Order failed:", error);

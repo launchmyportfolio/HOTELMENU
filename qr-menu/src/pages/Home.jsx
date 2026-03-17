@@ -1,9 +1,22 @@
-import { useParams } from "react-router-dom";
-const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
+import { useMemo } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import { useCustomerSession } from "../context/CustomerSessionContext";
 
 export default function Home() {
   const params = useParams();
-  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const location = useLocation();
+  const { session } = useCustomerSession();
+  const restaurantId = params.restaurantId;
+
+  const tableNumber = useMemo(() => {
+    const query = new URLSearchParams(location.search);
+    const t = Number(query.get("table"));
+    if (Number.isFinite(t) && t > 0) return t;
+    return session?.tableNumber || null;
+  }, [location.search, session]);
+
+  const tableQuery = tableNumber ? `?table=${tableNumber}` : "";
+  const restaurantPath = `/restaurant/${restaurantId}`;
   return (
     <section className="hero">
 
@@ -18,8 +31,8 @@ export default function Home() {
         </p>
 
         <div className="hero-buttons">
-          <a href={`/restaurant/${restaurantId}/items`} className="btn-primary">View Menu</a>
-          <a href={`/restaurant/${restaurantId}/contact`} className="btn-secondary">Contact Us</a>
+          <a href={`${restaurantPath}/items${tableQuery}`} className="btn-primary">View Menu</a>
+          <a href={`${restaurantPath}/contact${tableQuery}`} className="btn-secondary">Contact Us</a>
         </div>
       </div>
 

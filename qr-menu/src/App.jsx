@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import Items from "./pages/Items";
 import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
@@ -20,29 +21,97 @@ import AdminLogin from "./admin/AdminLogin"; // reused UI for owner login
 import OwnerRegister from "./admin/OwnerRegister";
 import AdminRestaurants from "./admin/AdminRestaurants";
 import AdminCreateRestaurant from "./admin/AdminCreateRestaurant";
+import AuthLayout from "./layouts/AuthLayout";
 import { useCustomerSession } from "./context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
-const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
+
+function useTableFromSearch() {
+  const location = useLocation();
+  return useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const t = Number(params.get("table"));
+    return Number.isFinite(t) && t > 0 ? t : null;
+  }, [location.search]);
+}
 
 function OwnerRoute({ auth, children }) {
   return auth?.token ? children : <Navigate to="/owner/login" replace />;
 }
 
 function CustomerRoute({ children }) {
-  const { session } = useCustomerSession();
+  const { session, clearSession } = useCustomerSession();
   const location = useLocation();
   const params = useParams();
-  const restaurantId = params.restaurantId || DEFAULT_RESTAURANT;
+  const restaurantId = params.restaurantId;
+  const tableNumber = useTableFromSearch();
   const search = location.search || "";
+  const [status, setStatus] = useState("checking");
 
-  if (!session || session.restaurantId !== restaurantId) {
-    return <Navigate to={`/restaurant/${restaurantId}/login${search}`} replace />;
-  }
+  useEffect(() => {
+    let active = true;
+
+    async function verifySession() {
+      if (!restaurantId || !tableNumber) {
+        setStatus("home");
+        return;
+      }
+
+      if (!session || session.restaurantId !== restaurantId || session.tableNumber !== tableNumber) {
+        setStatus("login");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/customer/session/${tableNumber}?restaurantId=${restaurantId}`);
+        const data = await res.json();
+
+        if (!active) return;
+
+        if (data.active && data.session?.sessionId === session.sessionId) {
+          setStatus("ok");
+        } else {
+          clearSession();
+          setStatus("home");
+        }
+      } catch (_err) {
+        if (!active) return;
+        setStatus("home");
+      }
+    }
+
+    verifySession();
+
+    return () => {
+      active = false;
+    };
+  }, [session, restaurantId, tableNumber, clearSession]);
+
+  if (status === "home") return <Navigate to="/" replace />;
+  if (status === "login") return <Navigate to={`/restaurant/${restaurantId}/login${search}`} replace />;
+  if (status !== "ok") return null;
   return children;
 }
 
+function CustomerLoginRoute({ session, onLogin }) {
+  const tableNumber = useTableFromSearch();
+  const params = useParams();
+  const restaurantId = params.restaurantId;
+
+  if (!restaurantId || !tableNumber) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <CustomerLogin
+      session={session}
+      onLogin={onLogin}
+    />
+  );
+}
+
 function AppRoutes() {
+  const location = useLocation();
   const { session, setSession, clearSession } = useCustomerSession();
   const [ownerAuth, setOwnerAuth] = useState(() => {
     try {
@@ -129,16 +198,15 @@ function AppRoutes() {
 
       <Routes>
 
-        <Route path="/" element={<Navigate to={`/restaurant/${DEFAULT_RESTAURANT}`} replace />} />
+        <Route path="/" element={<Landing />} />
 
         <Route
           path="/restaurant/:restaurantId/login"
-          element={
-            <CustomerLogin
-              session={session}
-              onLogin={setSession}
-            />
-          }
+          element={(
+            <AuthLayout>
+              <CustomerLoginRoute session={session} onLogin={setSession} />
+            </AuthLayout>
+          )}
         />
 
         <Route
@@ -188,16 +256,28 @@ function AppRoutes() {
 
         <Route
           path="/owner/login"
-          element={<AdminLogin onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} mode="owner" />}
+          element={(
+            <AuthLayout>
+              <AdminLogin onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} mode="owner" />
+            </AuthLayout>
+          )}
         />
         <Route
           path="/owner/register"
-          element={<OwnerRegister onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} />}
+          element={(
+            <AuthLayout>
+              <OwnerRegister onLogin={setOwnerAuth} isAdmin={Boolean(ownerAuth?.token)} />
+            </AuthLayout>
+          )}
         />
 
         <Route
           path="/admin/login"
-          element={<AdminLogin onLogin={setAdminAuth} isAdmin={Boolean(adminAuth)} mode="admin" />}
+          element={(
+            <AuthLayout>
+              <AdminLogin onLogin={setAdminAuth} isAdmin={Boolean(adminAuth)} mode="admin" />
+            </AuthLayout>
+          )}
         />
         <Route
           path="/admin/restaurants"
@@ -273,7 +353,7 @@ function AppRoutes() {
           }
         />
 
-        <Route path="*" element={<Navigate to={`/restaurant/${DEFAULT_RESTAURANT}`} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
 

@@ -38,5 +38,5 @@ export function useCustomerSession() {
 
 export function useRestaurantIdFromPath(pathname) {
   const match = pathname?.match(/\/restaurant\/([^/]+)/);
-  return match?.[1] || DEFAULT_RESTAURANT;
+  return match?.[1] || null;
 }

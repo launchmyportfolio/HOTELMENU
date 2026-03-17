@@ -1,0 +1,29 @@
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.auth-layout__top {
+  position: fixed;
+  top: 80px; /* below the fixed navbar */
+  right: 24px;
+  z-index: 1100;
+}
+
+.auth-layout__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-link {
+  color: #ff6b00;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+}
