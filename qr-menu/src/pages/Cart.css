@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 20px; /* optional horizontal padding */
+  padding: 0 20px 240px; /* leave extra room above fixed footer */
 }
 
 .cart-container::before {
@@ -176,7 +176,7 @@
   justify-content: space-between;
   gap: 12px;
   position: sticky;
-  bottom: 12px;
+  bottom: 140px; /* clear fixed footer comfortably */
   z-index: 1100;
 }
 
@@ -207,7 +207,7 @@
 
 @media (max-width: 768px) {
   .cart-container {
-    padding: 80px 14px 160px; /* extra bottom padding for fixed footer + bar */
+    padding: 80px 14px 260px; /* extra bottom padding for fixed footer + bar */
     align-items: flex-start;
   }
 
@@ -234,7 +234,7 @@
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: 72px; /* keep above footer */
+    bottom: 140px; /* keep well above footer */
     z-index: 1100;
   }
 }
