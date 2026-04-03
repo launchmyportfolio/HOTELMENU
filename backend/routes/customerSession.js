@@ -3,6 +3,9 @@ const crypto = require("crypto");
 
 const CustomerSession = require("../models/CustomerSession");
 const Table = require("../models/Table");
+const Order = require("../models/Order");
+const { createNotificationsForRoles } = require("../services/notificationService");
+const { BILL_STATUS } = require("../services/billService");
 
 const router = express.Router();
 const DEFAULT_TABLES = Number(process.env.DEFAULT_TABLES || 10);
@@ -34,6 +37,22 @@ router.post("/start", sessionLimiter, async (req, res) => {
     if (existing) {
       return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
     }
+
+    await Order.updateMany(
+      {
+        restaurantId,
+        tableNumber: numericTable,
+        billStatus: BILL_STATUS.OPEN,
+        sessionId: { $ne: null }
+      },
+      {
+        $set: {
+          billStatus: BILL_STATUS.CANCELLED,
+          billClosedAt: new Date(),
+          status: "Rejected"
+        }
+      }
+    );
 
     await ensureTables(restaurantId);
 
@@ -70,6 +89,23 @@ router.post("/start", sessionLimiter, async (req, res) => {
         updatedAt: new Date()
       },
       { upsert: true }
+    );
+
+    await createNotificationsForRoles(
+      {
+        title: `Table ${numericTable} occupied`,
+        message: `${customerName} started a dining session at table ${numericTable}.`,
+        type: "TABLE_OCCUPIED",
+        priority: "MEDIUM",
+        tableNumber: numericTable,
+        sessionId,
+        restaurantId,
+        metadata: {
+          customerName,
+          phoneNumber
+        }
+      },
+      ["ADMIN", "STAFF"]
     );
 
     return res.json(session);
@@ -113,6 +149,22 @@ router.post("/end", sessionLimiter, async (req, res) => {
         activeSession: false,
         updatedAt: new Date()
       }
+    );
+
+    await createNotificationsForRoles(
+      {
+        title: `Table ${numericTable} available`,
+        message: `Dining session ended for table ${numericTable}.`,
+        type: "TABLE_AVAILABLE",
+        priority: "MEDIUM",
+        tableNumber: numericTable,
+        sessionId,
+        restaurantId,
+        metadata: {
+          customerName: session.customerName
+        }
+      },
+      ["ADMIN", "STAFF"]
     );
 
     return res.json({ message: "Session ended", session });

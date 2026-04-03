@@ -8,14 +8,23 @@ import Items from "./pages/Items";
 import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
 import Status from "./pages/Status";
+import OrderPayment from "./pages/OrderPayment";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import Receipt from "./pages/Receipt";
+import PaymentFailed from "./pages/PaymentFailed";
 
 import AdminHome from "./admin/AdminHome";
 import AdminOrders from "./admin/AdminOrders";
+import KitchenDashboard from "./admin/KitchenDashboard";
+import StaffPanel from "./admin/StaffPanel";
 import MenuManagement from "./admin/MenuManagement";
 import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
 import CustomerLogin from "./pages/CustomerLogin";
 import TablesDashboard from "./admin/TablesDashboard";
+import PaymentSettings from "./admin/PaymentSettings";
+import OwnerAnalytics from "./admin/OwnerAnalytics";
+import OwnerSettings from "./admin/OwnerSettings";
 import Footer from "./components/Footer";
 import AdminLogin from "./admin/AdminLogin"; // reused UI for owner login
 import OwnerRegister from "./admin/OwnerRegister";
@@ -23,6 +32,11 @@ import AdminRestaurants from "./admin/AdminRestaurants";
 import AdminCreateRestaurant from "./admin/AdminCreateRestaurant";
 import AuthLayout from "./layouts/AuthLayout";
 import { useCustomerSession } from "./context/CustomerSessionContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import NotificationToasts from "./components/NotificationToasts";
+import AppErrorBoundary from "./components/AppErrorBoundary";
+import NotificationsPage from "./pages/NotificationsPage";
+import "./styles/Notifications.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -44,8 +58,18 @@ function CustomerRoute({ children }) {
   const location = useLocation();
   const params = useParams();
   const restaurantId = params.restaurantId;
-  const tableNumber = useTableFromSearch();
+  const tableFromSearch = useTableFromSearch();
+  const tableNumber = Number(tableFromSearch || session?.tableNumber || 0) || null;
   const search = location.search || "";
+  const searchWithTable = useMemo(() => {
+    if (tableFromSearch) return search;
+    if (session?.tableNumber) {
+      const tableParam = `table=${encodeURIComponent(String(session.tableNumber))}`;
+      if (!search) return `?${tableParam}`;
+      return search.includes("table=") ? search : `${search}${search.includes("?") ? "&" : "?"}${tableParam}`;
+    }
+    return search;
+  }, [tableFromSearch, search, session?.tableNumber]);
   const [status, setStatus] = useState("checking");
 
   useEffect(() => {
@@ -57,7 +81,11 @@ function CustomerRoute({ children }) {
         return;
       }
 
-      if (!session || session.restaurantId !== restaurantId || session.tableNumber !== tableNumber) {
+      if (
+        !session
+        || session.restaurantId !== restaurantId
+        || Number(session.tableNumber) !== Number(tableNumber)
+      ) {
         setStatus("login");
         return;
       }
@@ -74,9 +102,9 @@ function CustomerRoute({ children }) {
           clearSession();
           setStatus("home");
         }
-      } catch (_err) {
+      } catch {
         if (!active) return;
-        setStatus("home");
+        setStatus("login");
       }
     }
 
@@ -88,8 +116,14 @@ function CustomerRoute({ children }) {
   }, [session, restaurantId, tableNumber, clearSession]);
 
   if (status === "home") return <Navigate to="/" replace />;
-  if (status === "login") return <Navigate to={`/restaurant/${restaurantId}/login${search}`} replace />;
-  if (status !== "ok") return null;
+  if (status === "login") return <Navigate to={`/restaurant/${restaurantId}/login${searchWithTable}`} replace />;
+  if (status !== "ok") {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#fff", background: "#111" }}>
+        Checking session...
+      </div>
+    );
+  }
   return children;
 }
 
@@ -117,7 +151,7 @@ function AppRoutes() {
     try {
       const stored = localStorage.getItem("ownerAuth");
       return stored ? JSON.parse(stored) : null;
-    } catch (_err) {
+    } catch {
       return null;
     }
   });
@@ -184,19 +218,54 @@ function AppRoutes() {
     setAdminAuth("");
   }
 
+  const ownerPanelRole = useMemo(() => {
+    if (location.pathname.startsWith("/owner/kitchen")) return "KITCHEN";
+    if (location.pathname.startsWith("/owner/staff")) return "STAFF";
+    return "ADMIN";
+  }, [location.pathname]);
+
+  const notificationActor = useMemo(() => {
+    if (ownerAuth?.token && ownerAuth?.restaurant?.id) {
+      const role = ownerPanelRole;
+      const listenRoles = [role];
+      return {
+        kind: "OWNER",
+        role,
+        listenRoles,
+        token: ownerAuth.token,
+        restaurantId: ownerAuth.restaurant.id
+      };
+    }
+
+    if (session?.sessionId && session?.restaurantId && session?.tableNumber) {
+      return {
+        kind: "CUSTOMER",
+        role: "CUSTOMER",
+        restaurantId: session.restaurantId,
+        tableNumber: session.tableNumber,
+        sessionId: session.sessionId
+      };
+    }
+
+    return null;
+  }, [ownerAuth, ownerPanelRole, session]);
+
   const navSession = useMemo(() => session, [session]);
 
   return (
-    <>
-      <Navbar
-        isAdmin={Boolean(ownerAuth?.token || adminAuth)}
-        onLogout={ownerAuth?.token ? handleOwnerLogout : handleAdminLogout}
-        session={navSession}
-        onEndSession={handleEndSession}
-        adminMode={Boolean(adminAuth && !ownerAuth?.token)}
-      />
+    <NotificationProvider actor={notificationActor}>
+      <AppErrorBoundary>
+        <>
+        <Navbar
+          isAdmin={Boolean(ownerAuth?.token || adminAuth)}
+          onLogout={ownerAuth?.token ? handleOwnerLogout : handleAdminLogout}
+          session={navSession}
+          onEndSession={handleEndSession}
+          adminMode={Boolean(adminAuth && !ownerAuth?.token)}
+          ownerBranding={ownerAuth?.restaurant || null}
+        />
 
-      <Routes>
+        <Routes>
 
         <Route path="/" element={<Landing />} />
 
@@ -255,6 +324,26 @@ function AppRoutes() {
         />
 
         <Route
+          path="/restaurant/:restaurantId/order/:orderId/payment"
+          element={<OrderPayment />}
+        />
+
+        <Route
+          path="/restaurant/:restaurantId/payment-success"
+          element={<PaymentSuccess />}
+        />
+
+        <Route
+          path="/restaurant/:restaurantId/payment-failed"
+          element={<PaymentFailed />}
+        />
+
+        <Route
+          path="/restaurant/:restaurantId/receipt/:receiptId"
+          element={<Receipt />}
+        />
+
+        <Route
           path="/owner/login"
           element={(
             <AuthLayout>
@@ -300,7 +389,20 @@ function AppRoutes() {
           path="/owner/home"
           element={
             <OwnerRoute auth={ownerAuth}>
-              <AdminHome onLogout={handleOwnerLogout} />
+              <AdminHome
+                onLogout={handleOwnerLogout}
+                token={ownerAuth?.token}
+                restaurantId={ownerAuth?.restaurant?.id}
+                restaurant={ownerAuth?.restaurant}
+              />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/analytics"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <OwnerAnalytics token={ownerAuth?.token} restaurant={ownerAuth?.restaurant} />
             </OwnerRoute>
           }
         />
@@ -309,6 +411,22 @@ function AppRoutes() {
           element={
             <OwnerRoute auth={ownerAuth}>
               <AdminOrders token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/kitchen"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <KitchenDashboard token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/staff"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <StaffPanel token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
             </OwnerRoute>
           }
         />
@@ -352,13 +470,54 @@ function AppRoutes() {
             </OwnerRoute>
           }
         />
+        <Route
+          path="/owner/settings/payments"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <PaymentSettings token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/settings"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <OwnerSettings
+                token={ownerAuth?.token}
+                restaurant={ownerAuth?.restaurant}
+                onAuthRefresh={setOwnerAuth}
+                onLogout={handleOwnerLogout}
+              />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/admin/settings/payments"
+          element={
+            <OwnerRoute auth={ownerAuth}>
+              <PaymentSettings token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+            </OwnerRoute>
+          }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            notificationActor
+              ? <NotificationsPage />
+              : <Navigate to="/" replace />
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
 
-      </Routes>
+        </Routes>
 
-      <Footer />
-    </>
+        <NotificationToasts />
+        <Footer />
+        </>
+      </AppErrorBoundary>
+    </NotificationProvider>
   );
 }
 

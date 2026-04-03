@@ -56,6 +56,181 @@
   gap: 12px;
 }
 
+.payment-selection-panel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 245, 232, 0.86));
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.payment-selection-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.add-more-items-btn {
+  border: 1px solid rgba(255, 107, 0, 0.5);
+  background: linear-gradient(135deg, #ffffff, #fff2e5);
+  color: #b44a00;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.add-more-items-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(180, 74, 0, 0.12);
+  border-color: rgba(255, 107, 0, 0.8);
+}
+
+.payment-selection-head h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f1f1f;
+}
+
+.payment-selection-head span {
+  color: #555;
+  font-size: 13px;
+}
+
+.payment-method-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.payment-method-option {
+  border: 1px solid rgba(241, 194, 155, 0.8);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 248, 241, 0.9));
+  border-radius: 12px;
+  padding: 10px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.payment-method-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+  border-color: rgba(255, 107, 0, 0.45);
+}
+
+.payment-method-option.selected {
+  border-color: #ff6b00;
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.22), 0 14px 24px rgba(255, 107, 0, 0.2);
+  background: linear-gradient(145deg, rgba(255, 239, 224, 0.98), rgba(255, 249, 242, 0.98));
+}
+
+.payment-method-option.selected .payment-option-title {
+  color: #b54a00;
+}
+
+.payment-option-title {
+  margin: 0;
+  font-weight: 700;
+  color: #1e1e1e;
+}
+
+.payment-option-meta {
+  margin: 3px 0 0;
+  color: #666;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.default-pill {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #ffe8d5;
+  color: #c35f04;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.payment-instructions {
+  margin: 12px 0 4px;
+  font-size: 14px;
+  color: #333;
+}
+
+.payment-upi-id {
+  margin: 0;
+  font-weight: 700;
+  color: #222;
+}
+
+.payment-qr-wrap {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.payment-qr {
+  width: 124px;
+  height: 124px;
+  border-radius: 10px;
+  border: 1px solid rgba(240, 209, 182, 0.9);
+  object-fit: cover;
+}
+
+.upi-details-card {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 107, 0, 0.24);
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(145deg, rgba(255, 248, 239, 0.9), rgba(255, 255, 255, 0.8));
+  backdrop-filter: blur(8px);
+}
+
+.upi-app-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a4300;
+}
+
+.upi-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.upi-copy-btn {
+  border: 1px solid rgba(255, 107, 0, 0.6);
+  background: rgba(255, 255, 255, 0.85);
+  color: #b54a00;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upi-copy-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 14px rgba(181, 74, 0, 0.15);
+}
+
+.online-min-note {
+  margin: 10px 0 0;
+  color: #975504;
+  font-weight: 600;
+}
+
 .cart-card {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid #eee;
@@ -194,6 +369,11 @@
   min-width: 160px;
 }
 
+.place-order-btn:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 .place-order-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 26px rgba(197, 50, 14, 0.45);
@@ -205,10 +385,24 @@
   font-weight: 500;
 }
 
+.payable-total {
+  font-weight: 700;
+  color: #1c1c1c;
+}
+
 @media (max-width: 768px) {
   .cart-container {
     padding: 80px 14px 260px; /* extra bottom padding for fixed footer + bar */
     align-items: flex-start;
+  }
+
+  .payment-selection-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .add-more-items-btn {
+    width: 100%;
   }
 
   .cart-content {
@@ -259,5 +453,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  .upi-id-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

@@ -1,6 +1,7 @@
 const express = require("express");
 const Table = require("../models/Table");
 const verifyOwnerToken = require("../middleware/verifyOwnerToken");
+const { createNotificationsForRoles } = require("../services/notificationService");
 
 const router = express.Router();
 
@@ -117,6 +118,22 @@ router.post("/:tableNumber/free", verifyOwnerToken, async (req, res) => {
       { new: true }
     );
     if (!table) return res.status(404).json({ error: "Table not found" });
+
+    await createNotificationsForRoles(
+      {
+        title: `Table ${tableNumber} marked free`,
+        message: `Table ${tableNumber} was manually freed by owner/staff.`,
+        type: "TABLE_AVAILABLE",
+        priority: "MEDIUM",
+        tableNumber,
+        restaurantId: req.owner.restaurantId,
+        metadata: {
+          source: "manual-force-free"
+        }
+      },
+      ["ADMIN", "STAFF"]
+    );
+
     res.json({ message: "Table freed", table });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -133,6 +150,11 @@ router.post("/sync/session", verifyOwnerToken, async (req, res) => {
 
     await ensureTables(req.owner.restaurantId, tableNumber);
 
+    const previous = await Table.findOne({
+      restaurantId: req.owner.restaurantId,
+      tableNumber: Number(tableNumber)
+    });
+
     const table = await Table.findOneAndUpdate(
       { restaurantId: req.owner.restaurantId, tableNumber: Number(tableNumber) },
       {
@@ -144,6 +166,38 @@ router.post("/sync/session", verifyOwnerToken, async (req, res) => {
       },
       { new: true, upsert: true }
     );
+
+    const normalizedStatus = String(status || "").toLowerCase();
+    const prevStatus = previous?.status || "free";
+    if (normalizedStatus === "occupied" && prevStatus !== "occupied") {
+      await createNotificationsForRoles(
+        {
+          title: `Table ${tableNumber} occupied`,
+          message: `Table ${tableNumber} is now occupied.`,
+          type: "TABLE_OCCUPIED",
+          priority: "MEDIUM",
+          tableNumber: Number(tableNumber),
+          restaurantId: req.owner.restaurantId,
+          metadata: { customerName, phoneNumber, source: "session-sync" }
+        },
+        ["ADMIN", "STAFF"]
+      );
+    }
+
+    if (normalizedStatus === "free" && prevStatus !== "free") {
+      await createNotificationsForRoles(
+        {
+          title: `Table ${tableNumber} available`,
+          message: `Table ${tableNumber} is now free.`,
+          type: "TABLE_AVAILABLE",
+          priority: "MEDIUM",
+          tableNumber: Number(tableNumber),
+          restaurantId: req.owner.restaurantId,
+          metadata: { source: "session-sync" }
+        },
+        ["ADMIN", "STAFF"]
+      );
+    }
 
     res.json(table);
   } catch (err) {

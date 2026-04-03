@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -18,6 +19,15 @@ export default function TablesDashboard({ token, restaurantId }) {
   const cardRefs = useRef({});
   const [showQR, setShowQR] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [highlightTable, setHighlightTable] = useState(null);
+  const location = useLocation();
+
+  const targetTable = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("highlightTable") || params.get("table") || params.get("tableNumber");
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [location.search]);
 
   async function fetchTables() {
     try {
@@ -52,6 +62,17 @@ export default function TablesDashboard({ token, restaurantId }) {
 
     return () => clearInterval(interval);
   }, [token]);
+
+  useEffect(() => {
+    if (!targetTable || !tables.length) return;
+    const node = document.querySelector(`[data-table-card-id="${targetTable}"]`);
+    if (!node) return;
+
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightTable(targetTable);
+    const timeout = window.setTimeout(() => setHighlightTable(null), 5200);
+    return () => window.clearTimeout(timeout);
+  }, [targetTable, tables]);
 
   function getTableUrl(tableNumber) {
     const rid = restaurantId || DEFAULT_RESTAURANT;
@@ -218,7 +239,11 @@ export default function TablesDashboard({ token, restaurantId }) {
 
       <div className="tables-grid">
         {tables.map(table => (
-          <div key={table.tableNumber} className="table-card">
+          <div
+            key={table.tableNumber}
+            data-table-card-id={table.tableNumber}
+            className={`table-card ${highlightTable === table.tableNumber ? "table-card-highlight" : ""}`}
+          >
             <div className="menu-top">
               <h3>Table {table.tableNumber}</h3>
               <span className={`table-status ${table.status}`}>{table.status === "occupied" ? "Occupied" : "Free"}</span>

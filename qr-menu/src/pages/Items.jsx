@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Items.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
+import { buildCustomerRoute, readTableNumberFromSearch } from "../utils/customerRouting";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -18,13 +19,21 @@ export default function Items() {
   const { session } = useCustomerSession();
 
   const tableNumber = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const t = Number(params.get("table"));
-    if (Number.isFinite(t) && t > 0) return t;
-    return session?.tableNumber || null;
+    return readTableNumberFromSearch(location.search, session?.tableNumber || null);
   }, [location.search, session]);
 
-  const tableQuery = tableNumber ? `?table=${tableNumber}` : "";
+  useEffect(() => {
+    const incomingCart = Array.isArray(location.state?.cart) ? location.state.cart : [];
+    if (!incomingCart.length) return;
+
+    setCart(incomingCart);
+    setCounts(incomingCart.reduce((acc, item) => {
+      const itemId = item?._id || item?.id;
+      if (!itemId) return acc;
+      acc[itemId] = Number(item.qty || 0);
+      return acc;
+    }, {}));
+  }, [location.state]);
 
   useEffect(() => {
     async function fetchMenu() {
@@ -80,7 +89,7 @@ export default function Items() {
   }
 
   function handleCheckout() {
-    navigate(`/restaurant/${restaurantId}/cart${tableQuery}`, { state: { cart } });
+    navigate(buildCustomerRoute(restaurantId, "cart", { tableNumber }), { state: { cart } });
   }
 
   function renderStars(rating = 4.5) {

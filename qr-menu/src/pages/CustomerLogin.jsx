@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./CustomerLogin.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
+import { buildCustomerRoute, readTableNumberFromSearch } from "../utils/customerRouting";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -11,9 +12,7 @@ export default function CustomerLogin({ onLogin, session }) {
   const location = useLocation();
   const restaurantId = params.restaurantId;
   const paramsTable = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const t = Number(params.get("table"));
-    return Number.isFinite(t) && t > 0 ? t : null;
+    return readTableNumberFromSearch(location.search, null);
   }, [location.search]);
 
   const { setSession } = useCustomerSession();
@@ -34,10 +33,9 @@ export default function CustomerLogin({ onLogin, session }) {
 
   useEffect(() => {
     if (session) {
-      const search = paramsTable ? `?table=${paramsTable}` : location.search;
-      navigate(`/restaurant/${restaurantId}/items${search}`, { replace: true });
+      navigate(buildCustomerRoute(restaurantId, "items", { tableNumber: paramsTable }), { replace: true });
     }
-  }, [session, navigate, restaurantId, paramsTable, location.search]);
+  }, [session, navigate, restaurantId, paramsTable]);
 
   useEffect(() => {
     let active = true;
@@ -52,7 +50,7 @@ export default function CustomerLogin({ onLogin, session }) {
         }
         const data = await res.json();
         setRestaurantName(data.name || "");
-      } catch (_err) {
+      } catch {
         if (!active) return;
         setError("Unable to load restaurant details.");
       }
@@ -89,14 +87,14 @@ export default function CustomerLogin({ onLogin, session }) {
         } else {
           setError("");
         }
-      } catch (err) {
+      } catch {
         setTableInfo(prev => ({ ...prev, loading: false }));
         setError("Unable to verify table. Please retry.");
       }
     }
 
     checkTable();
-  }, [paramsTable]);
+  }, [paramsTable, restaurantId]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -155,8 +153,7 @@ export default function CustomerLogin({ onLogin, session }) {
       setSession(newSession);
       onLogin?.(newSession);
 
-      const search = paramsTable ? `?table=${paramsTable}` : location.search;
-      navigate(`/restaurant/${restaurantId}/items${search}`, { replace: true });
+      navigate(buildCustomerRoute(restaurantId, "items", { tableNumber: paramsTable }), { replace: true });
 
     } catch (err) {
       setError(err.message);

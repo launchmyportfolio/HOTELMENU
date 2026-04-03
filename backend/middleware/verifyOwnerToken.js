@@ -1,8 +1,9 @@
 const jwt = require("jsonwebtoken");
+const Restaurant = require("../models/Restaurant");
 
 const JWT_SECRET = process.env.OWNER_JWT_SECRET || "restaurant-secret";
 
-module.exports = function verifyOwnerToken(req, res, next) {
+module.exports = async function verifyOwnerToken(req, res, next) {
   const headerToken = req.headers.authorization || req.headers["x-owner-token"];
   const token = headerToken?.startsWith("Bearer ") ? headerToken.slice(7) : headerToken;
 
@@ -10,10 +11,25 @@ module.exports = function verifyOwnerToken(req, res, next) {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.owner = { restaurantId: payload.restaurantId, ownerId: payload.ownerId };
+    const restaurant = await Restaurant.findById(payload.restaurantId).select("_id tokenVersion name email ownerName phone address logoUrl");
+    if (!restaurant) {
+      return res.status(401).json({ error: "Owner account not found" });
+    }
+
+    const tokenVersion = Number(payload.tokenVersion || 0);
+    if (tokenVersion !== Number(restaurant.tokenVersion || 0)) {
+      return res.status(401).json({ error: "Session expired. Please login again." });
+    }
+
+    req.owner = {
+      restaurantId: payload.restaurantId,
+      ownerId: payload.ownerId,
+      tokenVersion,
+      restaurant
+    };
     req.restaurantId = payload.restaurantId;
     return next();
-  } catch (_err) {
+  } catch {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 };

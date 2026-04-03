@@ -1,0 +1,384 @@
+.payment-receipt-page {
+  min-height: 100vh;
+  position: relative;
+  padding: 96px 18px 160px;
+  background:
+    radial-gradient(circle at top left, rgba(68, 163, 108, 0.32), transparent 32%),
+    radial-gradient(circle at top right, rgba(255, 173, 62, 0.22), transparent 28%),
+    linear-gradient(180deg, #09231d 0%, #061510 42%, #04100c 100%);
+}
+
+.payment-receipt-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 10, 8, 0.46);
+  backdrop-filter: blur(8px);
+}
+
+.payment-receipt-shell {
+  position: relative;
+  z-index: 2;
+  max-width: 980px;
+  margin: 0 auto;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(16px);
+}
+
+.success-shell {
+  padding: 28px;
+}
+
+.invoice-shell {
+  padding: 20px;
+}
+
+.payment-receipt-info,
+.payment-error-card p,
+.success-subtitle,
+.brand-address,
+.receipt-preview-head p,
+.invoice-header p,
+.invoice-footer p {
+  color: rgba(246, 249, 247, 0.82);
+}
+
+.payment-error-card {
+  padding: 28px;
+  text-align: center;
+  color: #fff;
+}
+
+.payment-error-card h1 {
+  margin: 0 0 10px;
+}
+
+.success-hero {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.success-checkmark {
+  width: 92px;
+  height: 92px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #46d28a, #14995a);
+  color: #fff;
+  font-size: 48px;
+  font-weight: 800;
+  box-shadow: 0 22px 38px rgba(27, 150, 92, 0.35);
+}
+
+.success-copy h1,
+.receipt-preview-head h2,
+.invoice-header h1 {
+  margin: 0;
+  color: #fff;
+}
+
+.success-subtitle {
+  margin: 10px 0 0;
+  max-width: 540px;
+  line-height: 1.5;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand-badge img,
+.brand-badge span,
+.invoice-brand img,
+.invoice-brand span {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.brand-name {
+  margin: 0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.brand-address {
+  margin: 4px 0 0;
+}
+
+.success-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.summary-tile {
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.summary-tile span,
+.invoice-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(246, 249, 247, 0.72);
+}
+
+.summary-tile strong,
+.invoice-grid strong {
+  color: #fff;
+  font-size: 17px;
+}
+
+.summary-tile.highlight {
+  background: linear-gradient(140deg, rgba(42, 189, 109, 0.4), rgba(16, 108, 62, 0.34));
+  border-color: rgba(112, 255, 184, 0.32);
+}
+
+.receipt-preview-card,
+.invoice-card {
+  border-radius: 22px;
+  background: rgba(7, 22, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.receipt-preview-card {
+  padding: 18px;
+}
+
+.receipt-preview-head,
+.invoice-header,
+.invoice-toolbar,
+.receipt-action-row,
+.invoice-total-row,
+.preview-row,
+.preview-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.paid-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(77, 226, 146, 0.18);
+  color: #8df1bb;
+  border: 1px solid rgba(116, 255, 176, 0.28);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.preview-list {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-row,
+.preview-total-row {
+  padding: 12px 0;
+  color: #fff;
+}
+
+.preview-row + .preview-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-total-row {
+  font-size: 18px;
+}
+
+.receipt-action-row {
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.receipt-btn {
+  appearance: none;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(140deg, #3cbc77, #188d53);
+  color: #fff;
+  font-weight: 700;
+}
+
+.receipt-btn.secondary {
+  background: linear-gradient(140deg, #f1b04b, #d8821e);
+}
+
+.receipt-btn.ghost {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.invoice-toolbar {
+  margin-bottom: 16px;
+}
+
+.invoice-card {
+  padding: 24px;
+  color: #fff;
+}
+
+.invoice-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.invoice-meta {
+  text-align: right;
+}
+
+.invoice-meta p {
+  margin: 8px 0 0;
+}
+
+.invoice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+  padding: 18px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.invoice-table-wrap {
+  overflow-x: auto;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 12px 10px;
+  text-align: left;
+}
+
+.invoice-table th {
+  color: rgba(246, 249, 247, 0.74);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.invoice-table tbody tr {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.invoice-totals {
+  margin-top: 22px;
+  margin-left: auto;
+  max-width: 340px;
+}
+
+.invoice-total-row {
+  padding: 10px 0;
+  color: rgba(246, 249, 247, 0.88);
+}
+
+.invoice-total-row.grand-total {
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 18px;
+}
+
+.invoice-footer {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 720px) {
+  .payment-receipt-page {
+    padding: 88px 14px 140px;
+  }
+
+  .success-shell,
+  .invoice-shell,
+  .invoice-card {
+    padding: 18px;
+  }
+
+  .success-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-header,
+  .invoice-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .invoice-meta {
+    text-align: left;
+  }
+}
+
+@media print {
+  .nav,
+  .footer,
+  .print-hidden,
+  .receipt-action-row,
+  .payment-receipt-overlay {
+    display: none !important;
+  }
+
+  .payment-receipt-page {
+    background: #fff;
+    padding: 0;
+  }
+
+  .payment-receipt-shell,
+  .invoice-card {
+    background: #fff;
+    color: #111;
+    box-shadow: none;
+    border: none;
+  }
+
+  .invoice-card,
+  .invoice-card * {
+    color: #111 !important;
+  }
+
+  .paid-pill {
+    border-color: #198754;
+    color: #198754 !important;
+    background: transparent;
+  }
+}

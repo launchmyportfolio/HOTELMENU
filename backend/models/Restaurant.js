@@ -7,7 +7,10 @@ const RestaurantSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   phone: { type: String, default: "" },
-  address: { type: String, default: "" }
+  address: { type: String, default: "" },
+  logoUrl: { type: String, default: "" },
+  tokenVersion: { type: Number, default: 0 },
+  notificationSoundEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
 
 RestaurantSchema.pre("save", async function hashPwd() {
