@@ -15,6 +15,7 @@ const PROVIDER_OPTIONS = [
 
 const CREDENTIAL_FIELD_MAP = {
   RAZORPAY: [
+    { key: "accountName", label: "Razorpay Account Name", type: "text" },
     { key: "keyId", label: "Razorpay Key ID", type: "text" },
     { key: "keySecret", label: "Razorpay Key Secret", type: "password" },
     { key: "webhookSecret", label: "Razorpay Webhook Secret", type: "password" }
@@ -163,6 +164,7 @@ export default function PaymentSettings({ token, restaurantId }) {
   const [razorpayDiagnostics, setRazorpayDiagnostics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [validatingRazorpay, setValidatingRazorpay] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -491,6 +493,34 @@ export default function PaymentSettings({ token, restaurantId }) {
     }
   }
 
+  async function handleValidateRazorpay() {
+    if (!restaurantId) return;
+
+    setValidatingRazorpay(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/payment-settings/${restaurantId}/razorpay-validate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to validate Razorpay credentials");
+
+      setRazorpayDiagnostics(prev => ({
+        ...(prev || {}),
+        ...data
+      }));
+      setSuccessMessage(data.message || "Razorpay credentials validated");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setValidatingRazorpay(false);
+    }
+  }
+
   const credentialFields = useMemo(() => {
     const provider = normalizeProvider(editorMethod?.providerName || "");
     return CREDENTIAL_FIELD_MAP[provider] || [];
@@ -499,7 +529,7 @@ export default function PaymentSettings({ token, restaurantId }) {
   return (
     <div className="admin-dashboard payment-settings-page">
       <h1>Payment Settings</h1>
-      <p className="info-text">For Razorpay production, enter your live `key_id`, live `key_secret`, and the webhook secret from the same live account.</p>
+      <p className="info-text">For Razorpay production, enter your live `key_id`, live `key_secret`, optional account name, and the webhook secret from the same live account.</p>
 
       {error && <p className="error-text">{error}</p>}
       {successMessage && <div className="payment-save-toast">{successMessage}</div>}
@@ -584,6 +614,15 @@ export default function PaymentSettings({ token, restaurantId }) {
             >
               {saving ? "Saving..." : "Save Settings"}
             </button>
+            <button
+              type="button"
+              className="payment-save-btn"
+              onClick={handleValidateRazorpay}
+              disabled={validatingRazorpay || saving}
+              style={{ marginTop: "10px", background: "linear-gradient(135deg, #1b8f5a, #0f6f47)" }}
+            >
+              {validatingRazorpay ? "Validating Razorpay..." : "Validate Razorpay Keys"}
+            </button>
             {hasUnsavedChanges && (
               <p className="info-text" style={{ marginTop: "8px" }}>
                 Unsaved changes detected. Click Save Settings to apply these methods for customer checkout.
@@ -594,9 +633,16 @@ export default function PaymentSettings({ token, restaurantId }) {
               <div className="glass-card" style={{ marginTop: "18px", padding: "16px" }}>
                 <h3 style={{ marginBottom: "10px" }}>Razorpay Diagnostics</h3>
                 <p className="info-text">Mode: <strong>{razorpayDiagnostics.mode || "UNKNOWN"}</strong></p>
+                <p className="info-text">Status: <strong>{razorpayDiagnostics.status || "NOT_VALIDATED"}</strong></p>
+                <p className="info-text">Account: <strong>{razorpayDiagnostics.accountName || "Not set"}</strong></p>
                 <p className="info-text">Credential source: <strong>{razorpayDiagnostics.credentialSource || "missing"}</strong></p>
                 <p className="info-text">Public key: <strong>{razorpayDiagnostics.keyIdPreview || "Not configured"}</strong></p>
                 <p className="info-text">Webhook secret: <strong>{razorpayDiagnostics.hasWebhookSecret ? `Configured via ${razorpayDiagnostics.webhookSecretSource}` : "Missing"}</strong></p>
+                {razorpayDiagnostics.message && (
+                  <p className={razorpayDiagnostics.status === "VALID" ? "info-text" : "error-text"} style={{ marginTop: "8px" }}>
+                    {razorpayDiagnostics.message}
+                  </p>
+                )}
                 {(razorpayDiagnostics.warnings || []).map((warning, index) => (
                   <p key={`razorpay-warning-${index}`} className="error-text" style={{ marginTop: "8px" }}>
                     {warning}

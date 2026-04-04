@@ -83,11 +83,11 @@ export default function AdminRestaurants({ token }) {
     load();
   }, [token, load]);
 
-  async function runAction(endpoint, payload, successMessage) {
+  async function runAction(endpoint, payload, successMessage, method = "PATCH") {
     setSaving(true);
     try {
       const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: "PATCH",
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
@@ -138,6 +138,23 @@ export default function AdminRestaurants({ token }) {
         notes: `Marked ${subscriptionStatus.toLowerCase()} by super admin`
       },
       "Unable to update subscription payment"
+    );
+  }
+
+  async function handlePaymentModeToggle(restaurant, paymentModeEnabled) {
+    await runAction(
+      `/api/admin/restaurants/${restaurant._id}/payment-mode`,
+      { paymentModeEnabled },
+      "Unable to update restaurant payment mode"
+    );
+  }
+
+  async function handleValidateRazorpay(restaurant) {
+    await runAction(
+      `/api/admin/restaurants/${restaurant._id}/validate-razorpay`,
+      { disableOnFailure: false },
+      "Unable to validate restaurant Razorpay settings",
+      "POST"
     );
   }
 
@@ -263,6 +280,9 @@ export default function AdminRestaurants({ token }) {
               <div>{restaurant.subscriptionPlan}</div>
               <div className="muted">{restaurant.planType}</div>
               <div className="muted">{formatDate(restaurant.subscriptionEndDate)}</div>
+              <div className="muted">
+                Razorpay: {restaurant.paymentModeEnabled === false ? "Disabled" : (restaurant.paymentConfigurationStatus || "Not checked")}
+              </div>
             </span>
             <span data-label="Actions" className="table-actions admin-restaurants-actions">
               {restaurant.approvalStatus !== "APPROVED" && (
@@ -300,6 +320,16 @@ export default function AdminRestaurants({ token }) {
                   Mark Unpaid
                 </button>
               )}
+              <button type="button" className="ghost-btn" onClick={() => handleValidateRazorpay(restaurant)} disabled={saving}>
+                Validate Razorpay
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePaymentModeToggle(restaurant, restaurant.paymentModeEnabled === false)}
+                disabled={saving}
+              >
+                {restaurant.paymentModeEnabled === false ? "Enable Payments" : "Disable Payments"}
+              </button>
               <button type="button" className="ghost-btn" onClick={() => openSubscriptionModal(restaurant)} disabled={saving}>
                 Edit Subscription
               </button>

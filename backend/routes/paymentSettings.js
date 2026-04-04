@@ -1,4 +1,5 @@
 const express = require("express");
+const Restaurant = require("../models/Restaurant");
 const verifyOwnerToken = require("../middleware/verifyOwnerToken");
 const {
   getOrCreatePaymentSettings,
@@ -10,6 +11,7 @@ const {
   normalizeProviderName
 } = require("../services/payments/paymentSettingsService");
 const { resolveRazorpayCredentials } = require("../services/payments/razorpayGateway");
+const { validateRestaurantRazorpayConfiguration } = require("../services/payments/razorpayConfigService");
 
 const router = express.Router();
 
@@ -46,6 +48,9 @@ router.get("/:restaurantId/razorpay-diagnostics", verifyOwnerToken, async (req, 
     if (!restaurantId) return;
 
     const settings = await getOrCreatePaymentSettings(restaurantId);
+    const restaurant = await Restaurant.findById(restaurantId)
+      .select("paymentModeEnabled paymentConfigurationStatus paymentConfigurationMessage paymentConfigurationValidatedAt")
+      .lean();
     const enabledMethods = Array.isArray(settings.enabledMethods) ? settings.enabledMethods : [];
     const razorpayMethod = enabledMethods.find(method => normalizeProviderName(method?.providerName || "") === "RAZORPAY");
     const methodCredentials = razorpayMethod ? getMethodCredentials(razorpayMethod, settings) : {};
@@ -59,6 +64,11 @@ router.get("/:restaurantId/razorpay-diagnostics", verifyOwnerToken, async (req, 
       configuredMethodName: String(razorpayMethod?.displayName || "Razorpay"),
       enabled: Boolean(razorpayMethod?.enabled),
       type: String(razorpayMethod?.type || "ONLINE"),
+      accountName: diagnostics.accountName || "",
+      status: String(restaurant?.paymentConfigurationStatus || "NOT_VALIDATED"),
+      message: String(restaurant?.paymentConfigurationMessage || ""),
+      paymentModeEnabled: restaurant?.paymentModeEnabled !== false,
+      validatedAt: restaurant?.paymentConfigurationValidatedAt || null,
       mode: diagnostics.mode,
       credentialSource: diagnostics.credentialSource,
       keyIdPreview: diagnostics.keyIdPreview,
@@ -74,13 +84,29 @@ router.get("/:restaurantId/razorpay-diagnostics", verifyOwnerToken, async (req, 
   }
 });
 
+router.post("/:restaurantId/razorpay-validate", verifyOwnerToken, async (req, res) => {
+  try {
+    const restaurantId = ensureOwnerRestaurantAccess(req, res);
+    if (!restaurantId) return;
+
+    const result = await validateRestaurantRazorpayConfiguration(restaurantId, { persist: true });
+    return res.json(result);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
 router.post("/:restaurantId", verifyOwnerToken, async (req, res) => {
   try {
     const restaurantId = ensureOwnerRestaurantAccess(req, res);
     if (!restaurantId) return;
 
     const settings = await upsertPaymentSettings(restaurantId, req.body || {});
-    return res.status(201).json(buildAdminSafeSettings(settings));
+    const razorpayValidation = await validateRestaurantRazorpayConfiguration(restaurantId, { persist: true });
+    return res.status(201).json({
+      ...buildAdminSafeSettings(settings),
+      razorpayValidation
+    });
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
@@ -92,7 +118,11 @@ router.put("/:restaurantId", verifyOwnerToken, async (req, res) => {
     if (!restaurantId) return;
 
     const settings = await upsertPaymentSettings(restaurantId, req.body || {});
-    return res.json(buildAdminSafeSettings(settings));
+    const razorpayValidation = await validateRestaurantRazorpayConfiguration(restaurantId, { persist: true });
+    return res.json({
+      ...buildAdminSafeSettings(settings),
+      razorpayValidation
+    });
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }

@@ -57,6 +57,23 @@ const RestaurantSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  paymentModeEnabled: {
+    type: Boolean,
+    default: true
+  },
+  paymentConfigurationStatus: {
+    type: String,
+    enum: ["MISSING", "INVALID", "VALID", "DISABLED"],
+    default: "MISSING"
+  },
+  paymentConfigurationMessage: {
+    type: String,
+    default: ""
+  },
+  paymentConfigurationValidatedAt: {
+    type: Date,
+    default: null
+  },
   createdByAdmin: {
     type: Boolean,
     default: false

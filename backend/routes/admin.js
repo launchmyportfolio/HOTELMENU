@@ -12,6 +12,7 @@ const {
   buildRestaurantAdminSummary,
   syncRestaurantLifecycle
 } = require("../services/restaurantAccessService");
+const { validateRestaurantRazorpayConfiguration } = require("../services/payments/razorpayConfigService");
 
 const router = express.Router();
 
@@ -137,13 +138,71 @@ router.get("/restaurants/:id", isAdmin, async (req, res) => {
     if (!restaurant) return;
 
     const payments = await SubscriptionPayment.find({ restaurantId: restaurant._id }).sort({ createdAt: -1 }).limit(20);
+    const razorpayConfig = await validateRestaurantRazorpayConfiguration(restaurant._id, {
+      restaurant,
+      persist: false
+    });
 
     return res.json({
       restaurant: buildRestaurantAdminSummary(restaurant),
-      subscriptionPayments: payments
+      subscriptionPayments: payments,
+      razorpayConfig
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch("/restaurants/:id/payment-mode", isAdmin, async (req, res) => {
+  try {
+    const restaurant = await findRestaurantOr404(req.params.id, res);
+    if (!restaurant) return;
+
+    restaurant.paymentModeEnabled = req.body?.paymentModeEnabled !== false;
+    if (restaurant.paymentModeEnabled === false) {
+      restaurant.paymentConfigurationStatus = "DISABLED";
+      restaurant.paymentConfigurationMessage = "Razorpay disabled by super admin.";
+      restaurant.paymentConfigurationValidatedAt = new Date();
+    }
+
+    await restaurant.save();
+
+    return res.json({
+      message: restaurant.paymentModeEnabled
+        ? "Restaurant payment mode enabled."
+        : "Restaurant payment mode disabled.",
+      restaurant: buildRestaurantAdminSummary(restaurant)
+    });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+router.post("/restaurants/:id/validate-razorpay", isAdmin, async (req, res) => {
+  try {
+    const restaurant = await findRestaurantOr404(req.params.id, res);
+    if (!restaurant) return;
+
+    const validation = await validateRestaurantRazorpayConfiguration(restaurant._id, {
+      restaurant,
+      persist: true
+    });
+
+    if (validation.status === "INVALID" && req.body?.disableOnFailure === true) {
+      restaurant.paymentModeEnabled = false;
+      restaurant.paymentConfigurationStatus = "DISABLED";
+      restaurant.paymentConfigurationMessage = `Disabled by admin after failed validation: ${validation.message}`;
+      restaurant.paymentConfigurationValidatedAt = new Date();
+      await restaurant.save();
+    }
+
+    return res.json({
+      message: validation.message,
+      validation,
+      restaurant: buildRestaurantAdminSummary(restaurant)
+    });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 });
 

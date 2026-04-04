@@ -38,15 +38,35 @@ import { NotificationProvider } from "./context/NotificationContext";
 import NotificationToasts from "./components/NotificationToasts";
 import AppErrorBoundary from "./components/AppErrorBoundary";
 import NotificationsPage from "./pages/NotificationsPage";
+import { buildCustomerRoute, readTableNumberFromSearch } from "./utils/customerRouting";
 import "./styles/Notifications.css";
 import "./App.css";
 
 function useTableFromSearch() {
   const location = useLocation();
   return useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const t = Number(params.get("table"));
-    return Number.isFinite(t) && t > 0 ? t : null;
+    return readTableNumberFromSearch(location.search, null);
+  }, [location.search]);
+}
+
+function RootRoute() {
+  const location = useLocation();
+
+  return useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    const restaurantId = String(params.get("restaurantId") || "").trim();
+    const tableNumber = readTableNumberFromSearch(location.search, null);
+
+    if (restaurantId) {
+      return (
+        <Navigate
+          to={buildCustomerRoute(restaurantId, "", { tableNumber })}
+          replace
+        />
+      );
+    }
+
+    return <Landing />;
   }, [location.search]);
 }
 
@@ -273,7 +293,7 @@ function AppRoutes() {
         <AppShell>
         <Routes>
 
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRoute />} />
 
         <Route
           path="/restaurant/:restaurantId/login"

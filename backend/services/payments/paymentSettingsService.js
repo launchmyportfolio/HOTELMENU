@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const Restaurant = require("../../models/Restaurant");
 const RestaurantPaymentSettings = require("../../models/RestaurantPaymentSettings");
 const {
   sanitizeCredentialInput,
@@ -445,6 +446,9 @@ function isMethodAllowedBySettings(method = {}, settings = {}) {
 
 async function getCustomerPaymentOptions(restaurantId) {
   const settings = await getOrCreatePaymentSettings(restaurantId);
+  const restaurant = await Restaurant.findById(String(restaurantId || "").trim())
+    .select("paymentModeEnabled")
+    .lean();
   const { normalizedMethods, hadDuplicates, hasDefaultMismatch } = normalizeSettingsMethods(settings);
 
   if (hadDuplicates || hasDefaultMismatch) {
@@ -470,6 +474,12 @@ async function getCustomerPaymentOptions(restaurantId) {
 
   let methods = (safeSettings.enabledMethods || [])
     .filter(method => method.enabled && isMethodAllowedBySettings(method, safeSettings))
+    .filter(method => {
+      if (normalizeProviderName(method.providerName || "") !== "RAZORPAY") {
+        return true;
+      }
+      return restaurant?.paymentModeEnabled !== false;
+    })
     .sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1;
       if (!a.isDefault && b.isDefault) return 1;

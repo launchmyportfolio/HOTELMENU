@@ -11,6 +11,18 @@ export function readTableNumberFromSearch(search = "", fallback = null) {
   return parsePositiveTableNumber(params.get("table"), fallback);
 }
 
+function normalizeOrigin(value = "") {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+export function resolvePublicAppOrigin() {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return normalizeOrigin(window.location.origin);
+  }
+
+  return normalizeOrigin(import.meta.env.VITE_PUBLIC_MENU_URL || "");
+}
+
 export function buildCustomerRoute(restaurantId, path = "", options = {}) {
   const rid = String(restaurantId || "").trim();
   const normalizedPath = String(path || "").trim().replace(/^\/+/, "");
@@ -29,6 +41,34 @@ export function buildCustomerRoute(restaurantId, path = "", options = {}) {
 
   const query = params.toString();
   return query ? `${routePath}?${query}` : routePath;
+}
+
+export function buildCustomerEntryRoute(restaurantId, options = {}) {
+  const rid = String(restaurantId || "").trim();
+  const params = new URLSearchParams();
+  const tableNumber = parsePositiveTableNumber(options.tableNumber, null);
+
+  if (rid) {
+    params.set("restaurantId", rid);
+  }
+
+  if (tableNumber) {
+    params.set("table", String(tableNumber));
+  }
+
+  Object.entries(options.query || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
+}
+
+export function buildCustomerEntryUrl(restaurantId, options = {}) {
+  const origin = normalizeOrigin(options.origin || resolvePublicAppOrigin());
+  const route = buildCustomerEntryRoute(restaurantId, options);
+  return origin ? `${origin}${route}` : route;
 }
 
 export function buildNotificationsRoute(options = {}) {

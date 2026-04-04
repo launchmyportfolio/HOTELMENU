@@ -24,7 +24,8 @@ function buildCredentialSource(sourceName = "", credentials = {}) {
     source: sourceName,
     keyId: normalizeText(credentials.keyId || credentials.key_id || credentials.apiKey),
     keySecret: normalizeText(credentials.keySecret || credentials.key_secret || credentials.apiSecret),
-    webhookSecret: normalizeText(credentials.webhookSecret || credentials.webhook_secret)
+    webhookSecret: normalizeText(credentials.webhookSecret || credentials.webhook_secret),
+    accountName: normalizeText(credentials.accountName || credentials.account_name)
   };
 }
 
@@ -37,29 +38,15 @@ function detectRazorpayMode(keyId = "") {
 
 function resolveRazorpayCredentials(credentials = {}, options = {}) {
   const paymentSettingsSource = buildCredentialSource("payment_settings", credentials);
-  const environmentSource = buildCredentialSource("environment", {
-    keyId: process.env.RAZORPAY_KEY_ID,
-    keySecret: process.env.RAZORPAY_KEY_SECRET,
-    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET
-  });
-
-  let selectedSource = null;
-  if (paymentSettingsSource.keyId && paymentSettingsSource.keySecret) {
-    selectedSource = paymentSettingsSource;
-  } else if (environmentSource.keyId && environmentSource.keySecret) {
-    selectedSource = environmentSource;
-  }
+  const selectedSource = paymentSettingsSource.keyId || paymentSettingsSource.keySecret
+    ? paymentSettingsSource
+    : null;
 
   const keyId = normalizeText(selectedSource?.keyId);
   const keySecret = normalizeText(selectedSource?.keySecret);
-  const webhookSource = normalizeText(selectedSource?.webhookSecret)
-    ? selectedSource
-    : environmentSource.webhookSecret
-      ? environmentSource
-      : paymentSettingsSource.webhookSecret
-        ? paymentSettingsSource
-        : null;
+  const webhookSource = normalizeText(selectedSource?.webhookSecret) ? selectedSource : null;
   const webhookSecret = normalizeText(webhookSource?.webhookSecret);
+  const accountName = normalizeText(selectedSource?.accountName);
   const mode = detectRazorpayMode(keyId);
   const missingFields = [];
 
@@ -69,9 +56,7 @@ function resolveRazorpayCredentials(credentials = {}, options = {}) {
   const warnings = [];
   if (paymentSettingsSource.keyId || paymentSettingsSource.keySecret) {
     if (!(paymentSettingsSource.keyId && paymentSettingsSource.keySecret)) {
-      warnings.push("Saved Razorpay credentials are incomplete, so they are not being used.");
-    } else if (environmentSource.keyId && environmentSource.keySecret) {
-      warnings.push("Environment Razorpay credentials are set, but saved payment settings take priority.");
+      warnings.push("Saved Razorpay credentials are incomplete.");
     }
   }
 
@@ -87,6 +72,7 @@ function resolveRazorpayCredentials(credentials = {}, options = {}) {
     keyId,
     keySecret,
     webhookSecret,
+    accountName,
     mode,
     credentialSource: selectedSource?.source || "missing",
     webhookSecretSource: webhookSource?.source || "missing",
@@ -110,6 +96,7 @@ function getRazorpayCredentials(credentials = {}) {
     keyId: resolved.keyId,
     keySecret: resolved.keySecret,
     webhookSecret: resolved.webhookSecret,
+    accountName: resolved.accountName,
     mode: resolved.mode,
     credentialSource: resolved.credentialSource,
     webhookSecretSource: resolved.webhookSecretSource
@@ -208,6 +195,22 @@ async function createRazorpayOrder(payload = {}) {
   };
 }
 
+async function validateRazorpayCredentials(payload = {}) {
+  const credentials = getRazorpayCredentials(payload.credentials || {});
+  const response = await razorpayRequest("/payments?count=1", {
+    method: "GET",
+    credentials
+  });
+
+  return {
+    valid: true,
+    mode: credentials.mode,
+    accountName: credentials.accountName || "",
+    credentialSource: credentials.credentialSource,
+    hasItems: Array.isArray(response?.items)
+  };
+}
+
 function safeTimingCompare(a = "", b = "") {
   const left = Buffer.from(String(a || ""), "utf8");
   const right = Buffer.from(String(b || ""), "utf8");
@@ -254,6 +257,7 @@ module.exports = {
   resolveRazorpayCredentials,
   getRazorpayCredentials,
   createRazorpayOrder,
+  validateRazorpayCredentials,
   verifyCheckoutSignature,
   verifyWebhookSignature
 };

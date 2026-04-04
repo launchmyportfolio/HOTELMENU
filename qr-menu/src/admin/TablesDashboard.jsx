@@ -4,8 +4,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { API_BASE } from "../utils/apiBase";
+import { buildCustomerEntryUrl } from "../utils/customerRouting";
 import "../styles/Admin.css";
-const TABLE_URL_BASE = (import.meta.env.VITE_PUBLIC_MENU_URL || "https://hotelmenu-4iv.pages.dev").replace(/\/$/, "");
 const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
 export default function TablesDashboard({ token, restaurantId }) {
@@ -75,7 +75,7 @@ export default function TablesDashboard({ token, restaurantId }) {
 
   function getTableUrl(tableNumber) {
     const rid = restaurantId || DEFAULT_RESTAURANT;
-    return `${TABLE_URL_BASE}/restaurant/${rid}?table=${tableNumber}`;
+    return buildCustomerEntryUrl(rid, { tableNumber });
   }
 
   function setCardRef(tableNumber, node) {

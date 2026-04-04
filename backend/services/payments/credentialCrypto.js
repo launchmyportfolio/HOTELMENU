@@ -59,7 +59,10 @@ function maskValue(value) {
 
 function buildCredentialHints(credentials = {}) {
   return Object.entries(sanitizeCredentialInput(credentials)).reduce((acc, [key, value]) => {
-    acc[key] = maskValue(value);
+    const normalizedKey = String(key || "").trim().toLowerCase();
+    acc[key] = normalizedKey === "accountname" || normalizedKey === "account_name"
+      ? value
+      : maskValue(value);
     return acc;
   }, {});
 }

@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 
 const Order = require("../models/Order");
+const Restaurant = require("../models/Restaurant");
 const CustomerSession = require("../models/CustomerSession");
 const Table = require("../models/Table");
 const {
@@ -30,6 +31,7 @@ const {
   createNotification,
   createNotificationsForRoles
 } = require("../services/notificationService");
+const { upsertRestaurantPayment } = require("../services/payments/paymentAuditService");
 const {
   upsertReceiptForOrder,
   buildCustomerReceiptLinks
@@ -360,7 +362,7 @@ function getWebhookEntity(payload = {}) {
 }
 
 function readRequestOrderId(req) {
-  return String(req.body?.orderId || req.body?.order_id || "").trim();
+  return String(req.body?.orderId || req.body?.order_id || req.body?.billId || req.body?.bill_id || "").trim();
 }
 
 function readRequestedMethodId(req) {
@@ -388,6 +390,15 @@ async function resolveRazorpayMethod(order, requestedMethodId = "") {
     selectedMethod,
     paymentOptions
   };
+}
+
+async function getRestaurantPaymentGuard(restaurantId = "") {
+  const key = String(restaurantId || "").trim();
+  if (!key) return null;
+
+  return Restaurant.findById(key)
+    .select("paymentModeEnabled paymentConfigurationStatus paymentConfigurationMessage")
+    .lean();
 }
 
 customerRouter.post("/create-order", async (req, res) => {
@@ -423,9 +434,17 @@ customerRouter.post("/create-order", async (req, res) => {
     }
 
     const { selectedMethod, paymentOptions } = methodResolution;
+    const paymentGuard = await getRestaurantPaymentGuard(order.restaurantId);
+    if (paymentGuard && paymentGuard.paymentModeEnabled === false) {
+      return res.status(403).json({
+        error: paymentGuard.paymentConfigurationMessage || "Online payments are disabled for this restaurant."
+      });
+    }
+
     const paymentSettings = await getOrCreatePaymentSettings(order.restaurantId);
     const credentialsFromMethod = getMethodCredentials(selectedMethod, paymentSettings);
     const credentials = getRazorpayCredentials(credentialsFromMethod);
+    const checkoutName = String(credentials.accountName || process.env.RAZORPAY_CHECKOUT_NAME || "HotelMenu").trim() || "HotelMenu";
 
     ensureBillItems(order);
 
@@ -455,7 +474,7 @@ customerRouter.post("/create-order", async (req, res) => {
           orderId: existingRazorpayOrderId,
           amount: Number(order.paymentGatewayResponse?.razorpayAmount || toPaise(payableTotal, 0)),
           currency: String(order.paymentGatewayResponse?.razorpayCurrency || "INR"),
-          name: process.env.RAZORPAY_CHECKOUT_NAME || "HotelMenu",
+          name: checkoutName,
           description: `Payment for order ${order._id}`,
           mode: credentials.mode,
           notes: order.paymentGatewayResponse?.notes || {}
@@ -529,6 +548,21 @@ customerRouter.post("/create-order", async (req, res) => {
     });
 
     await order.save();
+    await upsertRestaurantPayment(order, {
+      paymentAttemptId: attemptId,
+      method: order.paymentMethod,
+      provider: "RAZORPAY",
+      amount: payableTotal,
+      currency: razorpayOrder.currency,
+      gatewayOrderId: razorpayOrder.id,
+      razorpayOrderId: razorpayOrder.id,
+      status: PAYMENT_STATUS.INITIATED,
+      gatewayPayload: {
+        receipt,
+        notes,
+        mode: credentials.mode
+      }
+    });
     emitOrderUpdated(buildOrderResponse(order));
 
     console.log("[razorpay-create-order]", {
@@ -546,7 +580,7 @@ customerRouter.post("/create-order", async (req, res) => {
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
-      name: process.env.RAZORPAY_CHECKOUT_NAME || "HotelMenu",
+      name: checkoutName,
       description: `Payment for order ${order._id}`,
       mode: credentials.mode,
       notes
@@ -672,6 +706,20 @@ customerRouter.post("/verify", async (req, res) => {
       });
 
       await order.save();
+      await upsertRestaurantPayment(order, {
+        paymentAttemptId: order.paymentAttemptId,
+        method: order.paymentMethod,
+        provider: "RAZORPAY",
+        amount: Number(order.payableTotal || order.total || 0),
+        currency: "INR",
+        razorpayOrderId: razorpayOrderId || storedRazorpayOrderId || "",
+        razorpayPaymentId: razorpayPaymentId || "",
+        status: PAYMENT_STATUS.FAILED,
+        failureReason: String(req.body.failureReason || "Payment failed in checkout"),
+        gatewayPayload: {
+          verificationMode: "customer-callback"
+        }
+      });
       emitOrderUpdated(buildOrderResponse(order));
 
       if (previousStatus !== PAYMENT_STATUS.FAILED) {
@@ -737,6 +785,22 @@ customerRouter.post("/verify", async (req, res) => {
     const receipt = await upsertReceiptForOrder(order);
 
     await order.save();
+    await upsertRestaurantPayment(order, {
+      paymentAttemptId: order.paymentAttemptId,
+      method: order.paymentMethod,
+      provider: "RAZORPAY",
+      amount: Number(order.payableTotal || order.total || 0),
+      currency: "INR",
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+      status: PAYMENT_STATUS.SUCCESS,
+      verifiedAt: new Date(),
+      gatewayPayload: {
+        verificationMode: "customer-callback",
+        receiptId: receipt?._id ? String(receipt._id) : String(order.receiptId || "")
+      }
+    });
     emitOrderUpdated(buildOrderResponse(order));
 
     if (previousStatus !== PAYMENT_STATUS.SUCCESS) {
@@ -778,10 +842,24 @@ webhookRouter.post("/", async (req, res) => {
     const webhook = getWebhookEntity(payload);
     console.log("[razorpay-webhook]", webhook);
 
+    let order = null;
+    if (webhook.orderId) {
+      order = await Order.findById(webhook.orderId);
+    }
+
+    if (!order && webhook.razorpayOrderId) {
+      order = await Order.findOne({ "paymentGatewayResponse.razorpayOrderId": webhook.razorpayOrderId });
+    }
+
+    if (!order && webhook.razorpayPaymentId) {
+      order = await Order.findOne({ transactionId: webhook.razorpayPaymentId });
+    }
+
+    const webhookRestaurantId = webhook.restaurantId || String(order?.restaurantId || "").trim();
     let webhookSecret = "";
-    if (webhook.restaurantId) {
+    if (webhookRestaurantId) {
       try {
-        const paymentSettings = await getOrCreatePaymentSettings(webhook.restaurantId);
+        const paymentSettings = await getOrCreatePaymentSettings(webhookRestaurantId);
         const settingsMethods = Array.isArray(paymentSettings.enabledMethods) ? paymentSettings.enabledMethods : [];
         const razorpayMethod = settingsMethods.find(item => isRazorpayProvider(item?.providerName || ""));
         const methodCredentials = razorpayMethod ? getMethodCredentials(razorpayMethod, paymentSettings) : {};
@@ -789,10 +867,6 @@ webhookRouter.post("/", async (req, res) => {
       } catch (_err) {
         webhookSecret = "";
       }
-    }
-
-    if (!webhookSecret) {
-      webhookSecret = getRazorpayCredentials({}).webhookSecret || "";
     }
 
     if (!webhookSecret) {
@@ -811,19 +885,6 @@ webhookRouter.post("/", async (req, res) => {
 
     if (!SUPPORTED_WEBHOOK_EVENTS.has(webhook.event)) {
       return res.json({ received: true, ignored: true, reason: "unsupported_event" });
-    }
-
-    let order = null;
-    if (webhook.orderId) {
-      order = await Order.findById(webhook.orderId);
-    }
-
-    if (!order && webhook.razorpayOrderId) {
-      order = await Order.findOne({ "paymentGatewayResponse.razorpayOrderId": webhook.razorpayOrderId });
-    }
-
-    if (!order && webhook.razorpayPaymentId) {
-      order = await Order.findOne({ transactionId: webhook.razorpayPaymentId });
     }
 
     if (!order) {
@@ -895,6 +956,23 @@ webhookRouter.post("/", async (req, res) => {
     }
 
     await order.save();
+    await upsertRestaurantPayment(order, {
+      paymentAttemptId: order.paymentAttemptId,
+      method: order.paymentMethod,
+      provider: "RAZORPAY",
+      amount: Number(order.payableTotal || order.total || 0),
+      currency: "INR",
+      razorpayOrderId: webhook.razorpayOrderId || getExistingRazorpayOrderId(order),
+      razorpayPaymentId: webhook.razorpayPaymentId || String(order.transactionId || ""),
+      status: successEvent ? PAYMENT_STATUS.SUCCESS : failureEvent ? PAYMENT_STATUS.FAILED : order.paymentStatus,
+      verifiedAt: successEvent ? new Date() : null,
+      failureReason: failureEvent ? webhook.status || "payment.failed" : "",
+      webhookEvent: webhook.event,
+      gatewayPayload: {
+        webhookStatus: webhook.status || "",
+        razorpayMethod: webhook.method || ""
+      }
+    });
     emitOrderUpdated(buildOrderResponse(order));
 
     try {
