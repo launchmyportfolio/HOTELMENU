@@ -17,8 +17,6 @@ export default function AdminHome({ token, restaurant }) {
   const cards = useMemo(() => ([
     { title: "Analytics", description: "Track revenue, paid bills, and payment trends", path: "/owner/analytics" },
     { title: "Orders", description: "View and update restaurant orders", path: "/owner/orders" },
-    { title: "Kitchen", description: "Track incoming and preparing orders", path: "/owner/kitchen" },
-    { title: "Staff", description: "Handle ready orders and service actions", path: "/owner/staff" },
     { title: "Tables", description: "Monitor and free tables", path: "/owner/tables" },
     { title: "Products", description: "Manage the menu items", path: "/owner/products" },
     { title: "Add Product", description: "Create a new menu item", path: "/owner/products/add" },

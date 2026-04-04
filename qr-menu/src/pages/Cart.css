@@ -395,7 +395,7 @@
 
 @media (max-width: 768px) {
   .cart-container {
-    padding: 16px 14px calc(var(--app-footer-height) + 96px);
+    padding: 16px 14px calc(var(--app-footer-height) + 28px);
     align-items: flex-start;
   }
 
@@ -428,11 +428,13 @@
   }
 
   .checkout-bar {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(var(--app-footer-height) + 12px);
+    position: sticky;
+    left: auto;
+    right: auto;
+    bottom: 12px;
     z-index: var(--z-dropdown);
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 

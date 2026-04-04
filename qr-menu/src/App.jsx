@@ -15,8 +15,6 @@ import PaymentFailed from "./pages/PaymentFailed";
 
 import AdminHome from "./admin/AdminHome";
 import AdminOrders from "./admin/AdminOrders";
-import KitchenDashboard from "./admin/KitchenDashboard";
-import StaffPanel from "./admin/StaffPanel";
 import MenuManagement from "./admin/MenuManagement";
 import AddProduct from "./admin/AddProduct";
 import EditProduct from "./admin/EditProduct";
@@ -243,15 +241,9 @@ function AppRoutes() {
     setAdminAuth("");
   }
 
-  const ownerPanelRole = useMemo(() => {
-    if (location.pathname.startsWith("/owner/kitchen")) return "KITCHEN";
-    if (location.pathname.startsWith("/owner/staff")) return "STAFF";
-    return "ADMIN";
-  }, [location.pathname]);
-
   const notificationActor = useMemo(() => {
     if (ownerAuth?.token && ownerAuth?.restaurant?.id) {
-      const role = ownerPanelRole;
+      const role = "ADMIN";
       const listenRoles = [role];
       return {
         kind: "OWNER",
@@ -273,7 +265,7 @@ function AppRoutes() {
     }
 
     return null;
-  }, [ownerAuth, ownerPanelRole, session]);
+  }, [ownerAuth, session]);
 
   const navSession = useMemo(() => session, [session]);
 
@@ -444,7 +436,7 @@ function AppRoutes() {
           path="/owner/kitchen"
           element={
             <OwnerRoute auth={ownerAuth}>
-              <KitchenDashboard token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+              <Navigate to="/owner/orders" replace />
             </OwnerRoute>
           }
         />
@@ -452,7 +444,7 @@ function AppRoutes() {
           path="/owner/staff"
           element={
             <OwnerRoute auth={ownerAuth}>
-              <StaffPanel token={ownerAuth?.token} restaurantId={ownerAuth?.restaurant?.id} />
+              <Navigate to="/owner/orders" replace />
             </OwnerRoute>
           }
         />
