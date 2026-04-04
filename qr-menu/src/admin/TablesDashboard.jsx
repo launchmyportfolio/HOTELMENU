@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from "qrcode";
 import JSZip from "jszip";
-import { toPng } from "html-to-image";
+import { API_BASE } from "../utils/apiBase";
 import "../styles/Admin.css";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 const TABLE_URL_BASE = (import.meta.env.VITE_PUBLIC_MENU_URL || "https://hotelmenu-4iv.pages.dev").replace(/\/$/, "");
 const DEFAULT_RESTAURANT = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
@@ -20,6 +18,7 @@ export default function TablesDashboard({ token, restaurantId }) {
   const [showQR, setShowQR] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [highlightTable, setHighlightTable] = useState(null);
+  const [copiedTable, setCopiedTable] = useState(null);
   const location = useLocation();
 
   const targetTable = useMemo(() => {
@@ -29,7 +28,7 @@ export default function TablesDashboard({ token, restaurantId }) {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [location.search]);
 
-  async function fetchTables() {
+  const fetchTables = useCallback(async () => {
     try {
       const [listRes, summaryRes] = await Promise.all([
         fetch(`${API_BASE}/api/admin/tables`, {
@@ -52,7 +51,7 @@ export default function TablesDashboard({ token, restaurantId }) {
     } catch (err) {
       setError(err.message);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -61,7 +60,7 @@ export default function TablesDashboard({ token, restaurantId }) {
     const interval = setInterval(fetchTables, 5000);
 
     return () => clearInterval(interval);
-  }, [token]);
+  }, [token, fetchTables]);
 
   useEffect(() => {
     if (!targetTable || !tables.length) return;
@@ -131,8 +130,23 @@ export default function TablesDashboard({ token, restaurantId }) {
       link.download = `table-${tableNumber}-qr.png`;
       link.click();
       setError("");
-    } catch (_err) {
+    } catch {
       setError("Unable to download QR right now. Please try again.");
+    }
+  }
+
+  async function copyTableUrl(tableNumber) {
+    const url = getTableUrl(tableNumber);
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedTable(tableNumber);
+      setError("");
+      window.setTimeout(() => {
+        setCopiedTable(current => (current === tableNumber ? null : current));
+      }, 1600);
+    } catch {
+      setError("Unable to copy table URL right now. Please try again.");
     }
   }
 
@@ -155,7 +169,7 @@ export default function TablesDashboard({ token, restaurantId }) {
       link.download = "table-qrcodes.zip";
       link.click();
       URL.revokeObjectURL(blobUrl);
-    } catch (_err) {
+    } catch {
       setError("Unable to download all QRs right now. Please try again.");
     } finally {
       setDownloadingAll(false);
@@ -277,6 +291,12 @@ export default function TablesDashboard({ token, restaurantId }) {
               </>
             )}
             <div className="table-actions">
+              <button
+                className="ghost-btn"
+                onClick={() => copyTableUrl(table.tableNumber)}
+              >
+                {copiedTable === table.tableNumber ? "Copied URL" : "Copy URL"}
+              </button>
               {showQR && (
                 <button className="ghost-btn" onClick={() => downloadQr(table.tableNumber)}>Download QR</button>
               )}

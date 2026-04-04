@@ -1,9 +1,8 @@
 import { useState } from "react";
+import { API_BASE } from "../utils/apiBase";
 import "../styles/Admin.css";
 
-const API_BASE = import.meta.env.VITE_API_URL;
-
-export default function AdminCreateRestaurant() {
+export default function AdminCreateRestaurant({ token }) {
   const [form, setForm] = useState({
     name: "",
     ownerName: "",
@@ -29,12 +28,15 @@ export default function AdminCreateRestaurant() {
     try {
       const res = await fetch(`${API_BASE}/api/restaurants/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(form)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to create restaurant");
-      setSuccess(`Created restaurant: ${data.restaurant?.name || "Success"}`);
+      setSuccess(data.message || `Created restaurant: ${data.restaurant?.name || "Success"}`);
       setForm({ name: "", ownerName: "", email: "", password: "", phone: "", address: "" });
     } catch (err) {
       setError(err.message);

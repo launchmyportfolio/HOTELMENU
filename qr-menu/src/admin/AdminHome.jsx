@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../utils/apiBase";
 import "../styles/Admin.css";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function AdminHome({ token, restaurant }) {
 
@@ -95,6 +94,11 @@ export default function AdminHome({ token, restaurant }) {
         </div>
       )}
       <h1>Owner Dashboard</h1>
+      {restaurant?.canAcceptNewOrders === false && (
+        <p className="error-text">
+          Subscription payment is pending. You can access the dashboard, but new customer orders are currently blocked until admin marks payment as paid.
+        </p>
+      )}
       {error && <p className="error-text">{error}</p>}
 
       <div className="tables-summary">

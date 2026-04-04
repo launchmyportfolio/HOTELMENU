@@ -29,13 +29,34 @@ const receiptRoutes = require("./routes/receipts");
 const { customerRouter: razorpayPaymentRoutes, webhookRouter: razorpayWebhookRoutes } = require("./routes/razorpayPayments");
 
 const app = express();
+
+function parseAllowedOrigins(value = "") {
+  return String(value || "")
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
+}
+
+const configuredCorsOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+const allowAllCorsOrigins = configuredCorsOrigins.length === 0;
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowAllCorsOrigins || configuredCorsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Origin not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+};
+
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }
+  cors: corsOptions
 });
 setIo(io);
 
-app.use(cors());
+app.set("trust proxy", 1);
+app.use(cors(corsOptions));
 app.use("/api/payments/razorpay/webhook", express.raw({ type: "application/json", limit: "2mb" }), razorpayWebhookRoutes);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

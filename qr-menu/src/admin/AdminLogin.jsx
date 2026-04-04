@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../utils/apiBase";
 import "../styles/Admin.css";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
 
@@ -16,6 +15,7 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
     address: ""
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const navigate = useNavigate();
 
@@ -27,7 +27,7 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
         navigate("/owner/home");
       }
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, mode]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -37,6 +37,7 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     let endpoint = "/api/restaurants/login";
     let payload = {
@@ -73,6 +74,17 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
       if (mode === "admin") {
         onLogin(data.token);
         navigate("/admin/restaurants", { replace: true });
+      } else if (mode === "register") {
+        setSuccess(data.message || "Registration submitted successfully. Please wait for admin approval.");
+        setForm({
+          username: "",
+          name: "",
+          ownerName: "",
+          email: "",
+          password: "",
+          phone: "",
+          address: ""
+        });
       } else {
         onLogin({ token: data.token, restaurant: data.restaurant });
         navigate("/owner/home", { replace: true });
@@ -96,6 +108,7 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
               : "Owner Login"
         }</h2>
         {error && <p className="error-text">{error}</p>}
+        {success && <p className="info-text">{success}</p>}
 
         {mode === "admin" && (
           <input

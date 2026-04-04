@@ -3,9 +3,8 @@ import { useMemo, useState } from "react";
 import "./Cart.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 import { useNotifications } from "../context/NotificationContext";
+import { API_BASE } from "../utils/apiBase";
 import { buildCustomerRoute, readTableNumberFromSearch } from "../utils/customerRouting";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 const PLACEHOLDER_RESTAURANT_IDS = new Set(["", "defaultrestaurant", "undefined", "null"]);
 
 function normalizeRestaurantId(value = "") {

@@ -3,10 +3,9 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./OrderPayment.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 import { useNotifications } from "../context/NotificationContext";
+import { API_BASE } from "../utils/apiBase";
 import { buildCustomerRoute, buildPaymentSuccessRoute } from "../utils/customerRouting";
 import { getBillItems, normalizeItemStatus } from "../utils/orderBillUtils";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 let razorpayScriptPromise = null;
 
 function normalizeProviderName(value = "") {
@@ -470,6 +469,14 @@ export default function OrderPayment() {
         name: String(razorpayDetails.name || "HotelMenu"),
         description: String(razorpayDetails.description || `Payment for order ${orderId}`),
         order_id: String(razorpayDetails.orderId || ""),
+        method: razorpayDetails.method && typeof razorpayDetails.method === "object"
+          ? razorpayDetails.method
+          : {
+              upi: true,
+              card: true,
+              netbanking: true,
+              wallet: true
+            },
         notes: razorpayDetails.notes && typeof razorpayDetails.notes === "object"
           ? razorpayDetails.notes
           : {},

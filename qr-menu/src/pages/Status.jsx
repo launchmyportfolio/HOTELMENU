@@ -3,11 +3,10 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Status.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
 import { useNotifications } from "../context/NotificationContext";
+import { API_BASE } from "../utils/apiBase";
 import { mapTypeToStatus } from "../utils/notificationUtils";
 import { buildCustomerRoute, buildPaymentSuccessRoute, readTableNumberFromSearch } from "../utils/customerRouting";
 import { getBillItems, normalizeItemStatus } from "../utils/orderBillUtils";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 function normalizeOrderStatus(value = "") {
   const key = String(value || "").trim().toUpperCase();
@@ -98,6 +97,12 @@ export default function Status() {
   const orderStatusKey = String(orderDetails?.status || "").trim().toUpperCase();
   const isServed = orderStatusKey === "SERVED" || orderStatusKey === "COMPLETED";
   const isPaid = paymentStatus === "SUCCESS";
+  const canAddMoreItems = Boolean(
+    params.restaurantId
+    && orderDetails
+    && String(orderDetails.billStatus || "OPEN").trim().toUpperCase() === "OPEN"
+    && paymentStatus !== "SUCCESS"
+  );
 
   function goToPaymentPage() {
     if (!orderId || !params.restaurantId) return;
@@ -115,6 +120,13 @@ export default function Status() {
       token: orderDetails.receiptShareToken,
       tableNumber: orderDetails.tableNumber || session?.tableNumber || null
     }));
+  }
+
+  function goToItemsPage() {
+    if (!params.restaurantId) return;
+    const tableFromUrl = readTableNumberFromSearch(location.search, null);
+    const tableNumber = Number(tableFromUrl || orderDetails?.tableNumber || session?.tableNumber || 0);
+    navigate(buildCustomerRoute(params.restaurantId, "items", { tableNumber }));
   }
 
   return (
@@ -183,6 +195,21 @@ export default function Status() {
                 <strong>₹{Number(orderDetails.payableTotal || orderDetails.total || 0).toFixed(2)}</strong>
               </div>
             </div>
+
+            {canAddMoreItems && (
+              <div className="status-payment-cta-wrap">
+                <p className="status-info-text">
+                  Need anything else? You can keep adding items to this running bill until payment is completed.
+                </p>
+                <button
+                  type="button"
+                  className="status-payment-cta"
+                  onClick={goToItemsPage}
+                >
+                  ADD MORE ITEMS
+                </button>
+              </div>
+            )}
 
             {orderDetails.transactionId && (
               <p className="transaction-id">Transaction ID: {orderDetails.transactionId}</p>

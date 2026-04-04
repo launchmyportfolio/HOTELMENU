@@ -320,6 +320,15 @@ function buildCreateOrderResponse(order, razorpayPayload = {}, options = {}) {
       currency: String(razorpayPayload.currency || "INR"),
       name: String(razorpayPayload.name || "HotelMenu"),
       description: String(razorpayPayload.description || `Payment for order ${order._id}`),
+      mode: String(razorpayPayload.mode || ""),
+      method: razorpayPayload.method && typeof razorpayPayload.method === "object"
+        ? razorpayPayload.method
+        : {
+            upi: true,
+            card: true,
+            netbanking: true,
+            wallet: true
+          },
       notes: razorpayPayload.notes && typeof razorpayPayload.notes === "object"
         ? razorpayPayload.notes
         : {}
@@ -448,6 +457,7 @@ customerRouter.post("/create-order", async (req, res) => {
           currency: String(order.paymentGatewayResponse?.razorpayCurrency || "INR"),
           name: process.env.RAZORPAY_CHECKOUT_NAME || "HotelMenu",
           description: `Payment for order ${order._id}`,
+          mode: credentials.mode,
           notes: order.paymentGatewayResponse?.notes || {}
         },
         { message: "Using existing Razorpay payment attempt." }
@@ -526,7 +536,9 @@ customerRouter.post("/create-order", async (req, res) => {
       restaurantId: order.restaurantId,
       tableNumber: Number(order.tableNumber),
       paymentMethodId: order.paymentMethodId,
-      razorpayOrderId: razorpayOrder.id
+      razorpayOrderId: razorpayOrder.id,
+      credentialSource: credentials.credentialSource,
+      mode: credentials.mode
     });
 
     return res.json(buildCreateOrderResponse(order, {
@@ -536,6 +548,7 @@ customerRouter.post("/create-order", async (req, res) => {
       currency: razorpayOrder.currency,
       name: process.env.RAZORPAY_CHECKOUT_NAME || "HotelMenu",
       description: `Payment for order ${order._id}`,
+      mode: credentials.mode,
       notes
     }));
   } catch (err) {

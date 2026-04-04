@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { API_BASE } from "../utils/apiBase";
 import "../styles/Admin.css";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 const PROVIDER_OPTIONS = [
   { providerName: "RAZORPAY", label: "Razorpay", type: "ONLINE" },
@@ -161,6 +160,7 @@ function normalizeSettingsPayload(payload = {}) {
 
 export default function PaymentSettings({ token, restaurantId }) {
   const [settings, setSettings] = useState(() => normalizeSettingsPayload({ enabledMethods: [] }));
+  const [razorpayDiagnostics, setRazorpayDiagnostics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -184,6 +184,23 @@ export default function PaymentSettings({ token, restaurantId }) {
     if (!token || !restaurantId) return undefined;
     let active = true;
 
+    async function fetchRazorpayDiagnostics() {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/payment-settings/${restaurantId}/razorpay-diagnostics`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Unable to load Razorpay diagnostics");
+        if (!active) return;
+        setRazorpayDiagnostics(data);
+      } catch {
+        if (!active) return;
+        setRazorpayDiagnostics(null);
+      }
+    }
+
     async function fetchSettings() {
       setLoading(true);
       setError("");
@@ -198,6 +215,7 @@ export default function PaymentSettings({ token, restaurantId }) {
         if (!active) return;
         setSettings(normalizeSettingsPayload(data));
         setHasUnsavedChanges(false);
+        fetchRazorpayDiagnostics();
       } catch (err) {
         if (!active) return;
         setError(err.message);
@@ -451,6 +469,19 @@ export default function PaymentSettings({ token, restaurantId }) {
       if (!res.ok) throw new Error(data.error || "Unable to save payment settings");
 
       setSettings(normalizeSettingsPayload(data));
+      try {
+        const diagnosticsRes = await fetch(`${API_BASE}/api/admin/payment-settings/${restaurantId}/razorpay-diagnostics`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const diagnosticsData = await diagnosticsRes.json();
+        if (diagnosticsRes.ok) {
+          setRazorpayDiagnostics(diagnosticsData);
+        }
+      } catch {
+        setRazorpayDiagnostics(null);
+      }
       setHasUnsavedChanges(false);
       setSuccessMessage("Payment settings saved");
     } catch (err) {
@@ -557,6 +588,21 @@ export default function PaymentSettings({ token, restaurantId }) {
               <p className="info-text" style={{ marginTop: "8px" }}>
                 Unsaved changes detected. Click Save Settings to apply these methods for customer checkout.
               </p>
+            )}
+
+            {razorpayDiagnostics && (
+              <div className="glass-card" style={{ marginTop: "18px", padding: "16px" }}>
+                <h3 style={{ marginBottom: "10px" }}>Razorpay Diagnostics</h3>
+                <p className="info-text">Mode: <strong>{razorpayDiagnostics.mode || "UNKNOWN"}</strong></p>
+                <p className="info-text">Credential source: <strong>{razorpayDiagnostics.credentialSource || "missing"}</strong></p>
+                <p className="info-text">Public key: <strong>{razorpayDiagnostics.keyIdPreview || "Not configured"}</strong></p>
+                <p className="info-text">Webhook secret: <strong>{razorpayDiagnostics.hasWebhookSecret ? `Configured via ${razorpayDiagnostics.webhookSecretSource}` : "Missing"}</strong></p>
+                {(razorpayDiagnostics.warnings || []).map((warning, index) => (
+                  <p key={`razorpay-warning-${index}`} className="error-text" style={{ marginTop: "8px" }}>
+                    {warning}
+                  </p>
+                ))}
+              </div>
             )}
           </section>
 

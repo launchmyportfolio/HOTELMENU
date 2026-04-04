@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Items.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
+import { API_BASE } from "../utils/apiBase";
 import { buildCustomerRoute, readTableNumberFromSearch } from "../utils/customerRouting";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function Items() {
 

@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./CustomerLogin.css";
 import { useCustomerSession } from "../context/CustomerSessionContext";
+import { API_BASE } from "../utils/apiBase";
 import { buildCustomerRoute, readTableNumberFromSearch } from "../utils/customerRouting";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function CustomerLogin({ onLogin, session }) {
 
@@ -24,6 +23,12 @@ export default function CustomerLogin({ onLogin, session }) {
 
   const [error, setError] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  const [restaurantAccess, setRestaurantAccess] = useState({
+    publicOrderingEnabled: true,
+    canAcceptNewOrders: true,
+    publicMessage: "",
+    orderRestrictionMessage: ""
+  });
   const [tableInfo, setTableInfo] = useState({
     loading: Boolean(paramsTable),
     tableExists: paramsTable ? null : false,
@@ -50,6 +55,17 @@ export default function CustomerLogin({ onLogin, session }) {
         }
         const data = await res.json();
         setRestaurantName(data.name || "");
+        setRestaurantAccess({
+          publicOrderingEnabled: data.publicOrderingEnabled !== false,
+          canAcceptNewOrders: data.canAcceptNewOrders !== false,
+          publicMessage: String(data.publicMessage || ""),
+          orderRestrictionMessage: String(data.orderRestrictionMessage || "")
+        });
+        if (data.publicOrderingEnabled === false) {
+          setError(data.publicMessage || "This restaurant is currently inactive. Please contact restaurant owner.");
+        } else if (data.canAcceptNewOrders === false) {
+          setError(data.orderRestrictionMessage || "This restaurant is not accepting new orders right now.");
+        }
       } catch {
         if (!active) return;
         setError("Unable to load restaurant details.");
@@ -82,6 +98,10 @@ export default function CustomerLogin({ onLogin, session }) {
 
         if (data.tableExists === false) {
           setError("Invalid table QR code.");
+        } else if (restaurantAccess.publicOrderingEnabled === false) {
+          setError(restaurantAccess.publicMessage || "This restaurant is currently inactive. Please contact restaurant owner.");
+        } else if (restaurantAccess.canAcceptNewOrders === false) {
+          setError(restaurantAccess.orderRestrictionMessage || "This restaurant is not accepting new orders right now.");
         } else if (data.tableStatus === "occupied" || data.active) {
           setError("This table is currently in use.");
         } else {
@@ -94,7 +114,7 @@ export default function CustomerLogin({ onLogin, session }) {
     }
 
     checkTable();
-  }, [paramsTable, restaurantId]);
+  }, [paramsTable, restaurantId, restaurantAccess]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -105,6 +125,14 @@ export default function CustomerLogin({ onLogin, session }) {
     e.preventDefault();
     if (!paramsTable || tableInfo.tableExists === false) {
       setError("Invalid table QR code.");
+      return;
+    }
+    if (restaurantAccess.publicOrderingEnabled === false) {
+      setError(restaurantAccess.publicMessage || "This restaurant is currently inactive. Please contact restaurant owner.");
+      return;
+    }
+    if (restaurantAccess.canAcceptNewOrders === false) {
+      setError(restaurantAccess.orderRestrictionMessage || "This restaurant is not accepting new orders right now.");
       return;
     }
     if (tableInfo.tableStatus === "occupied" || tableInfo.active) {
@@ -172,6 +200,10 @@ export default function CustomerLogin({ onLogin, session }) {
         <p className="login-subtext">
           {!paramsTable || tableInfo.tableExists === false
             ? "Scan the QR at your table to continue."
+            : restaurantAccess.publicOrderingEnabled === false
+              ? (restaurantAccess.publicMessage || "This restaurant is currently inactive.")
+              : restaurantAccess.canAcceptNewOrders === false
+                ? (restaurantAccess.orderRestrictionMessage || "This restaurant is not accepting new orders right now.")
             : tableInfo.tableStatus === "occupied" || tableInfo.active
               ? "This table is currently in use."
               : "Welcome to Hotel Menu\nPlease enter your details to start ordering"}
@@ -215,6 +247,8 @@ export default function CustomerLogin({ onLogin, session }) {
             disabled={
               !paramsTable ||
               tableInfo.tableExists === false ||
+              restaurantAccess.publicOrderingEnabled === false ||
+              restaurantAccess.canAcceptNewOrders === false ||
               tableInfo.tableStatus === "occupied" ||
               tableInfo.active ||
               tableInfo.loading

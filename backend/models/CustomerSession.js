@@ -42,6 +42,11 @@ const CustomerSessionSchema = new mongoose.Schema({
     default: Date.now
   },
 
+  lastActivityAt: {
+    type: Date,
+    default: Date.now
+  },
+
   endedAt: {
     type: Date
   }

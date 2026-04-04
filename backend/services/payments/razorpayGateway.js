@@ -6,30 +6,114 @@ function normalizeText(value = "") {
   return String(value || "").trim();
 }
 
-function getRazorpayCredentials(credentials = {}) {
-  const keyId = normalizeText(
-    process.env.RAZORPAY_KEY_ID
-    || credentials.keyId
-    || credentials.key_id
-    || credentials.apiKey
-  );
-  const keySecret = normalizeText(
-    process.env.RAZORPAY_KEY_SECRET
-    || credentials.keySecret
-    || credentials.key_secret
-    || credentials.apiSecret
-  );
-  const webhookSecret = normalizeText(
-    process.env.RAZORPAY_WEBHOOK_SECRET
-    || credentials.webhookSecret
-    || credentials.webhook_secret
-  );
+function maskValue(value = "", options = {}) {
+  const text = normalizeText(value);
+  if (!text) return "";
 
-  if (!keyId || !keySecret) {
-    throw new Error("Razorpay credentials are not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.");
+  const visibleStart = Number.isFinite(Number(options.visibleStart)) ? Number(options.visibleStart) : 6;
+  const visibleEnd = Number.isFinite(Number(options.visibleEnd)) ? Number(options.visibleEnd) : 4;
+  if (text.length <= visibleStart + visibleEnd) {
+    return `${text.slice(0, Math.max(1, visibleStart))}${"*".repeat(Math.max(text.length - visibleStart, 1))}`;
   }
 
-  return { keyId, keySecret, webhookSecret };
+  return `${text.slice(0, visibleStart)}${"*".repeat(Math.max(text.length - visibleStart - visibleEnd, 1))}${text.slice(-visibleEnd)}`;
+}
+
+function buildCredentialSource(sourceName = "", credentials = {}) {
+  return {
+    source: sourceName,
+    keyId: normalizeText(credentials.keyId || credentials.key_id || credentials.apiKey),
+    keySecret: normalizeText(credentials.keySecret || credentials.key_secret || credentials.apiSecret),
+    webhookSecret: normalizeText(credentials.webhookSecret || credentials.webhook_secret)
+  };
+}
+
+function detectRazorpayMode(keyId = "") {
+  const normalized = normalizeText(keyId);
+  if (normalized.startsWith("rzp_live_")) return "LIVE";
+  if (normalized.startsWith("rzp_test_")) return "TEST";
+  return "UNKNOWN";
+}
+
+function resolveRazorpayCredentials(credentials = {}, options = {}) {
+  const paymentSettingsSource = buildCredentialSource("payment_settings", credentials);
+  const environmentSource = buildCredentialSource("environment", {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    keySecret: process.env.RAZORPAY_KEY_SECRET,
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET
+  });
+
+  let selectedSource = null;
+  if (paymentSettingsSource.keyId && paymentSettingsSource.keySecret) {
+    selectedSource = paymentSettingsSource;
+  } else if (environmentSource.keyId && environmentSource.keySecret) {
+    selectedSource = environmentSource;
+  }
+
+  const keyId = normalizeText(selectedSource?.keyId);
+  const keySecret = normalizeText(selectedSource?.keySecret);
+  const webhookSource = normalizeText(selectedSource?.webhookSecret)
+    ? selectedSource
+    : environmentSource.webhookSecret
+      ? environmentSource
+      : paymentSettingsSource.webhookSecret
+        ? paymentSettingsSource
+        : null;
+  const webhookSecret = normalizeText(webhookSource?.webhookSecret);
+  const mode = detectRazorpayMode(keyId);
+  const missingFields = [];
+
+  if (!keyId) missingFields.push("keyId");
+  if (!keySecret) missingFields.push("keySecret");
+
+  const warnings = [];
+  if (paymentSettingsSource.keyId || paymentSettingsSource.keySecret) {
+    if (!(paymentSettingsSource.keyId && paymentSettingsSource.keySecret)) {
+      warnings.push("Saved Razorpay credentials are incomplete, so they are not being used.");
+    } else if (environmentSource.keyId && environmentSource.keySecret) {
+      warnings.push("Environment Razorpay credentials are set, but saved payment settings take priority.");
+    }
+  }
+
+  if (!webhookSecret) {
+    warnings.push("Razorpay webhook secret is missing. Webhook verification will fail until it is configured.");
+  }
+
+  if (mode === "TEST" && String(options.runtimeEnvironment || process.env.NODE_ENV || "").trim().toLowerCase() === "production") {
+    warnings.push("Test Razorpay credentials are active while the server is running in production mode.");
+  }
+
+  return {
+    keyId,
+    keySecret,
+    webhookSecret,
+    mode,
+    credentialSource: selectedSource?.source || "missing",
+    webhookSecretSource: webhookSource?.source || "missing",
+    hasKeyId: Boolean(keyId),
+    hasKeySecret: Boolean(keySecret),
+    hasWebhookSecret: Boolean(webhookSecret),
+    keyIdPreview: maskValue(keyId, { visibleStart: 10, visibleEnd: 4 }),
+    missingFields,
+    warnings
+  };
+}
+
+function getRazorpayCredentials(credentials = {}) {
+  const resolved = resolveRazorpayCredentials(credentials);
+
+  if (!resolved.keyId || !resolved.keySecret) {
+    throw new Error("Razorpay credentials are not configured. Set a complete key_id and key_secret in payment settings or environment variables.");
+  }
+
+  return {
+    keyId: resolved.keyId,
+    keySecret: resolved.keySecret,
+    webhookSecret: resolved.webhookSecret,
+    mode: resolved.mode,
+    credentialSource: resolved.credentialSource,
+    webhookSecretSource: resolved.webhookSecretSource
+  };
 }
 
 function toPositiveInteger(value, fallback = 0) {
@@ -166,6 +250,8 @@ function verifyWebhookSignature(payload = {}) {
 
 module.exports = {
   toPaise,
+  detectRazorpayMode,
+  resolveRazorpayCredentials,
   getRazorpayCredentials,
   createRazorpayOrder,
   verifyCheckoutSignature,

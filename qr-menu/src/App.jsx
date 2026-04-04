@@ -31,14 +31,13 @@ import OwnerRegister from "./admin/OwnerRegister";
 import AdminRestaurants from "./admin/AdminRestaurants";
 import AdminCreateRestaurant from "./admin/AdminCreateRestaurant";
 import AuthLayout from "./layouts/AuthLayout";
+import { API_BASE } from "./utils/apiBase";
 import { useCustomerSession } from "./context/CustomerSessionContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotificationToasts from "./components/NotificationToasts";
 import AppErrorBoundary from "./components/AppErrorBoundary";
 import NotificationsPage from "./pages/NotificationsPage";
 import "./styles/Notifications.css";
-
-const API_BASE = import.meta.env.VITE_API_URL;
 
 function useTableFromSearch() {
   const location = useLocation();
@@ -91,7 +90,9 @@ function CustomerRoute({ children }) {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/customer/session/${tableNumber}?restaurantId=${restaurantId}`);
+        const res = await fetch(
+          `${API_BASE}/api/customer/session/${tableNumber}?restaurantId=${encodeURIComponent(restaurantId)}&sessionId=${encodeURIComponent(session.sessionId)}`
+        );
         const data = await res.json();
 
         if (!active) return;
@@ -177,7 +178,9 @@ function AppRoutes() {
     async function verifySession() {
       if (!session) return;
       try {
-        const res = await fetch(`${API_BASE}/api/customer/session/${session.tableNumber}?restaurantId=${session.restaurantId}`);
+        const res = await fetch(
+          `${API_BASE}/api/customer/session/${session.tableNumber}?restaurantId=${encodeURIComponent(session.restaurantId)}&sessionId=${encodeURIComponent(session.sessionId)}`
+        );
         const data = await res.json();
         if (!data.active || data.session?.sessionId !== session.sessionId) {
           clearSession();
@@ -380,7 +383,7 @@ function AppRoutes() {
           path="/admin/restaurants/new"
           element={
             adminAuth
-              ? <AdminCreateRestaurant />
+              ? <AdminCreateRestaurant token={adminAuth} />
               : <Navigate to="/admin/login" replace />
           }
         />

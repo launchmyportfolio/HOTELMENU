@@ -6,6 +6,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const CustomerSession = require("../models/CustomerSession");
 const Table = require("../models/Table");
+const Restaurant = require("../models/Restaurant");
 const verifyOwnerToken = require("../middleware/verifyOwnerToken");
 const { ordersLimiter } = require("../middleware/rateLimiters");
 const { emitNewOrder, emitOrderUpdated } = require("../socketEmitter");
@@ -41,6 +42,11 @@ const {
   upsertReceiptForOrder,
   buildCustomerReceiptLinks
 } = require("../services/receiptService");
+const { getTableOccupancySnapshot, touchSessionActivity } = require("../services/tableOccupancyService");
+const {
+  syncRestaurantLifecycle,
+  buildRestaurantAccessState
+} = require("../services/restaurantAccessService");
 
 const DEFAULT_RESTAURANT = process.env.DEFAULT_RESTAURANT_ID || "defaultRestaurant";
 
@@ -218,6 +224,14 @@ async function validateCustomerOrderAccess(order, payload = {}) {
       status: 403,
       error: "Invalid customer session"
     };
+  }
+
+  if (session?.active) {
+    await touchSessionActivity({
+      restaurantId,
+      tableNumber: Number(tableNumber),
+      sessionId
+    });
   }
 
   return {
@@ -451,6 +465,20 @@ router.post("/", ordersLimiter, async (req, res) => {
 
     const restaurantId = String(reqRestaurantId || DEFAULT_RESTAURANT).trim();
 
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found." });
+    }
+
+    await syncRestaurantLifecycle(restaurant);
+    const restaurantAccess = buildRestaurantAccessState(restaurant);
+    if (!restaurantAccess.publicOrderingEnabled) {
+      return res.status(403).json({ error: restaurantAccess.publicMessage });
+    }
+    if (!restaurantAccess.canAcceptNewOrders) {
+      return res.status(403).json({ error: restaurantAccess.orderRestrictionMessage });
+    }
+
     if (!tableNumber || !customerName || !phoneNumber || !sessionId || !restaurantId) {
       return res.status(400).json({
         error: "restaurantId, table number, customer name, phone, and sessionId are required."
@@ -466,6 +494,14 @@ router.post("/", ordersLimiter, async (req, res) => {
 
     if (!activeSession) {
       return res.status(403).json({ error: "No active session for this table." });
+    }
+
+    const occupancy = await getTableOccupancySnapshot(restaurantId, Number(tableNumber));
+    if (!occupancy.tableExists) {
+      return res.status(400).json({ error: "Invalid table QR code." });
+    }
+    if (occupancy.active && occupancy.session && String(occupancy.session.sessionId || "") !== String(sessionId).trim()) {
+      return res.status(409).json({ error: `Table ${tableNumber} is currently occupied.` });
     }
 
     const normalizedItems = normalizeItems(items);
@@ -522,6 +558,11 @@ router.post("/", ordersLimiter, async (req, res) => {
     order.status = deriveBillStatus(order);
 
     await order.save();
+    await touchSessionActivity({
+      restaurantId,
+      tableNumber: Number(tableNumber),
+      sessionId: String(sessionId).trim()
+    });
 
     await Table.findOneAndUpdate(
       { restaurantId, tableNumber: Number(tableNumber) },

@@ -3,9 +3,16 @@ const crypto = require("crypto");
 
 const CustomerSession = require("../models/CustomerSession");
 const Table = require("../models/Table");
-const Order = require("../models/Order");
+const Restaurant = require("../models/Restaurant");
 const { createNotificationsForRoles } = require("../services/notificationService");
-const { BILL_STATUS } = require("../services/billService");
+const {
+  getTableOccupancySnapshot,
+  touchSessionActivity
+} = require("../services/tableOccupancyService");
+const {
+  syncRestaurantLifecycle,
+  buildRestaurantAccessState
+} = require("../services/restaurantAccessService");
 
 const router = express.Router();
 const DEFAULT_TABLES = Number(process.env.DEFAULT_TABLES || 10);
@@ -33,35 +40,28 @@ router.post("/start", sessionLimiter, async (req, res) => {
 
     const numericTable = Number(tableNumber);
 
-    const existing = await CustomerSession.findOne({ restaurantId, tableNumber: numericTable, active: true });
-    if (existing) {
-      return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found." });
     }
 
-    await Order.updateMany(
-      {
-        restaurantId,
-        tableNumber: numericTable,
-        billStatus: BILL_STATUS.OPEN,
-        sessionId: { $ne: null }
-      },
-      {
-        $set: {
-          billStatus: BILL_STATUS.CANCELLED,
-          billClosedAt: new Date(),
-          status: "Rejected"
-        }
-      }
-    );
+    await syncRestaurantLifecycle(restaurant);
+    const access = buildRestaurantAccessState(restaurant);
+    if (!access.publicOrderingEnabled) {
+      return res.status(403).json({ error: access.publicMessage });
+    }
+    if (!access.canAcceptNewOrders) {
+      return res.status(403).json({ error: access.orderRestrictionMessage });
+    }
 
     await ensureTables(restaurantId);
 
-    const table = await Table.findOne({ restaurantId, tableNumber: numericTable });
-    if (!table) {
+    const snapshot = await getTableOccupancySnapshot(restaurantId, numericTable);
+    if (!snapshot.tableExists) {
       return res.status(400).json({ error: "Invalid table QR code." });
     }
 
-    if (table.status === "occupied") {
+    if (snapshot.occupied) {
       return res.status(409).json({ error: `Table ${numericTable} is currently occupied.` });
     }
 
@@ -72,7 +72,8 @@ router.post("/start", sessionLimiter, async (req, res) => {
       customerName,
       phoneNumber,
       sessionId,
-      restaurantId
+      restaurantId,
+      lastActivityAt: new Date()
     });
 
     await session.save();
@@ -140,22 +141,15 @@ router.post("/end", sessionLimiter, async (req, res) => {
       return res.status(404).json({ error: "Active session not found." });
     }
 
-    await Table.findOneAndUpdate(
-      { restaurantId, tableNumber: numericTable },
-      {
-        status: "free",
-        customerName: "",
-        phoneNumber: "",
-        activeSession: false,
-        updatedAt: new Date()
-      }
-    );
+    const occupancy = await getTableOccupancySnapshot(restaurantId, numericTable);
 
     await createNotificationsForRoles(
       {
-        title: `Table ${numericTable} available`,
-        message: `Dining session ended for table ${numericTable}.`,
-        type: "TABLE_AVAILABLE",
+        title: occupancy.occupied ? `Session ended at Table ${numericTable}` : `Table ${numericTable} available`,
+        message: occupancy.occupied
+          ? `Dining session ended for table ${numericTable}, but the active bill is still open.`
+          : `Dining session ended for table ${numericTable}.`,
+        type: occupancy.occupied ? "SYSTEM_ALERT" : "TABLE_AVAILABLE",
         priority: "MEDIUM",
         tableNumber: numericTable,
         sessionId,
@@ -167,7 +161,14 @@ router.post("/end", sessionLimiter, async (req, res) => {
       ["ADMIN", "STAFF"]
     );
 
-    return res.json({ message: "Session ended", session });
+    return res.json({
+      message: occupancy.occupied
+        ? "Session ended. Table remains occupied until the active bill is closed."
+        : "Session ended",
+      session,
+      tableStatus: occupancy.tableStatus,
+      activeBill: occupancy.activeBill
+    });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -184,26 +185,40 @@ router.get("/:tableNumber", async (req, res) => {
     const numericTable = Number(req.params.tableNumber);
     const restaurantId = req.query.restaurantId || DEFAULT_RESTAURANT;
 
-    const table = await Table.findOne({ restaurantId, tableNumber: numericTable });
-    if (!table) {
-      return res.json({ active: false, tableExists: false });
-    }
+    const requestedSessionId = String(req.query.sessionId || "").trim();
+    const snapshot = await getTableOccupancySnapshot(restaurantId, numericTable);
 
-    const session = await CustomerSession.findOne({ restaurantId, tableNumber: numericTable, active: true });
-
-    if (!session) {
+    if (!snapshot.tableExists) {
       return res.json({
         active: false,
-        tableExists: true,
-        tableStatus: table.status || "free"
+        occupied: false,
+        activeBill: false,
+        tableExists: false,
+        tableStatus: "free"
       });
     }
 
+    let activeSession = snapshot.session;
+    if (
+      requestedSessionId
+      && activeSession
+      && String(activeSession.sessionId || "") === requestedSessionId
+    ) {
+      activeSession = await touchSessionActivity({
+        restaurantId,
+        tableNumber: numericTable,
+        sessionId: requestedSessionId
+      }) || activeSession;
+    }
+
     return res.json({
-      active: true,
-      session,
+      active: Boolean(activeSession),
+      occupied: snapshot.occupied,
+      activeBill: snapshot.activeBill,
+      billId: snapshot.billId,
+      session: activeSession || null,
       tableExists: true,
-      tableStatus: table.status || "occupied"
+      tableStatus: snapshot.tableStatus
     });
 
   } catch (err) {
