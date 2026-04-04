@@ -72,6 +72,10 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession, admin
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, location.search]);
+
   if (isLoginPage) {
     return (
       <nav className="nav">
@@ -100,10 +104,9 @@ export default function Navbar({ isAdmin, onLogout, session, onEndSession, admin
     if (isAdmin) {
       return (
         <>
+          <Link className="nav-link" to="/owner/home">Dashboard</Link>
           <Link className="nav-link" to="/owner/analytics">Analytics</Link>
           <Link className="nav-link" to="/owner/orders">Orders</Link>
-          <Link className="nav-link" to="/owner/kitchen">Kitchen</Link>
-          <Link className="nav-link" to="/owner/staff">Staff</Link>
           <Link className="nav-link" to="/owner/tables">Tables</Link>
           <Link className="nav-link" to="/owner/products">Products</Link>
           <Link className="nav-link" to="/owner/products/add">Add Product</Link>

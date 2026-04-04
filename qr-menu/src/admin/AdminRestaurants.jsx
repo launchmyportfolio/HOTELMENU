@@ -208,7 +208,7 @@ export default function AdminRestaurants({ token }) {
         <div className="summary-card">Unpaid: {totals.unpaid}</div>
       </div>
 
-      <div className="table-controls" style={{ gap: "12px", flexWrap: "wrap" }}>
+      <div className="table-controls admin-restaurants-controls">
         <input
           type="text"
           placeholder="Search by restaurant, owner, email, phone"
@@ -228,8 +228,8 @@ export default function AdminRestaurants({ token }) {
         </select>
       </div>
 
-      <div className="table-list">
-        <div className="table-row table-head" style={{ gridTemplateColumns: "1.4fr 1fr 1.1fr 0.9fr 0.9fr 0.9fr 0.9fr 1.8fr" }}>
+      <div className="table-list admin-restaurants-list">
+        <div className="table-row table-head admin-restaurants-head" style={{ gridTemplateColumns: "1.4fr 1fr 1.1fr 0.9fr 0.9fr 0.9fr 0.9fr 1.8fr" }}>
           <span>Restaurant</span>
           <span>Owner</span>
           <span>Contact</span>
@@ -243,28 +243,28 @@ export default function AdminRestaurants({ token }) {
         {restaurants.map(restaurant => (
           <div
             key={restaurant._id}
-            className="table-row"
+            className="table-row admin-restaurants-row"
             style={{ gridTemplateColumns: "1.4fr 1fr 1.1fr 0.9fr 0.9fr 0.9fr 0.9fr 1.8fr", alignItems: "start" }}
           >
-            <span>
+            <span data-label="Restaurant">
               <strong>{restaurant.name}</strong>
               <div className="muted">{restaurant.address || "No address"}</div>
               <div className="muted">Registered: {formatDate(restaurant.createdAt)}</div>
             </span>
-            <span>{restaurant.ownerName || "—"}</span>
-            <span>
+            <span data-label="Owner">{restaurant.ownerName || "—"}</span>
+            <span data-label="Contact">
               <div>{restaurant.email}</div>
               <div className="muted">{restaurant.phone || "—"}</div>
             </span>
-            <span className={`status-pill ${buildStatusClass(restaurant.approvalStatus)}`}>{restaurant.approvalStatus}</span>
-            <span className={`status-pill ${buildStatusClass(restaurant.effectiveStatus)}`}>{restaurant.effectiveStatus}</span>
-            <span className={`payment-pill ${buildStatusClass(restaurant.subscriptionStatus)}`}>{restaurant.subscriptionStatus}</span>
-            <span>
+            <span data-label="Approval" className={`status-pill ${buildStatusClass(restaurant.approvalStatus)}`}>{restaurant.approvalStatus}</span>
+            <span data-label="Status" className={`status-pill ${buildStatusClass(restaurant.effectiveStatus)}`}>{restaurant.effectiveStatus}</span>
+            <span data-label="Payment" className={`payment-pill ${buildStatusClass(restaurant.subscriptionStatus)}`}>{restaurant.subscriptionStatus}</span>
+            <span data-label="Plan">
               <div>{restaurant.subscriptionPlan}</div>
               <div className="muted">{restaurant.planType}</div>
               <div className="muted">{formatDate(restaurant.subscriptionEndDate)}</div>
             </span>
-            <span className="table-actions" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <span data-label="Actions" className="table-actions admin-restaurants-actions">
               {restaurant.approvalStatus !== "APPROVED" && (
                 <button type="button" onClick={() => handleApproval(restaurant, "APPROVED")} disabled={saving}>
                   Approve

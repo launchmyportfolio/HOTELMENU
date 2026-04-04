@@ -31,6 +31,7 @@ import OwnerRegister from "./admin/OwnerRegister";
 import AdminRestaurants from "./admin/AdminRestaurants";
 import AdminCreateRestaurant from "./admin/AdminCreateRestaurant";
 import AuthLayout from "./layouts/AuthLayout";
+import AppShell from "./layouts/AppShell";
 import { API_BASE } from "./utils/apiBase";
 import { useCustomerSession } from "./context/CustomerSessionContext";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -38,6 +39,7 @@ import NotificationToasts from "./components/NotificationToasts";
 import AppErrorBoundary from "./components/AppErrorBoundary";
 import NotificationsPage from "./pages/NotificationsPage";
 import "./styles/Notifications.css";
+import "./App.css";
 
 function useTableFromSearch() {
   const location = useLocation();
@@ -268,6 +270,7 @@ function AppRoutes() {
           ownerBranding={ownerAuth?.restaurant || null}
         />
 
+        <AppShell>
         <Routes>
 
         <Route path="/" element={<Landing />} />
@@ -515,6 +518,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
+        </AppShell>
 
         <NotificationToasts />
         <Footer />

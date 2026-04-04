@@ -1,9 +1,10 @@
 .admin-dashboard{
-  padding:40px;
-  min-height:100vh;
+  padding:24px var(--app-page-padding-x) 32px;
+  min-height:calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   position:relative;
   z-index:1;
   padding-bottom:120px; /* avoid overlap with fixed footer */
+  overflow-x:hidden;
 }
 
 /* Blurred background image */
@@ -86,13 +87,16 @@
 .table-controls{
   display:flex;
   justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:12px;
   margin-bottom:12px;
   position:relative;
   z-index:2;
 }
 
 .table-search{
-  min-width:320px;
+  min-width:0;
+  width:min(100%, 360px);
   padding:10px 14px;
   border-radius:10px;
   border:1px solid rgba(255,255,255,0.2);
@@ -106,7 +110,7 @@
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:14px;
-  overflow:hidden;
+  overflow:auto;
   box-shadow:0 12px 28px rgba(0,0,0,0.35);
 }
 
@@ -135,6 +139,7 @@
 .table-actions{
   display:flex;
   gap:8px;
+  flex-wrap:wrap;
 }
 
 .orders-grid{
@@ -195,6 +200,7 @@
   display:flex;
   justify-content:space-between;
   font-weight:600;
+  gap:12px;
 }
 
 .order-total{
@@ -342,7 +348,7 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  height:100vh;
+  min-height:calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   position:relative;
   overflow:hidden;
   z-index:1;
@@ -368,7 +374,7 @@
   z-index:-1;
 }
 
-.login-card{
+.admin-login .login-card{
   background:rgba(255,255,255,0.95);
   padding:40px;
   border-radius:12px;
@@ -379,13 +385,13 @@
   box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
-.login-card input{
+.admin-login .login-card input{
 padding:10px;
 border:1px solid #ddd;
 border-radius:6px;
 }
 
-.login-card button{
+.admin-login .login-card button{
 padding:10px;
 border:none;
 background:#ff6b00;
@@ -419,6 +425,7 @@ cursor:pointer;
   display:flex;
   gap:14px;
   box-shadow:0 10px 25px rgba(0,0,0,0.25);
+  max-width:100%;
 }
 
 .menu-thumb img, .menu-thumb .placeholder{
@@ -462,6 +469,7 @@ cursor:pointer;
 .muted{
   color:#666;
   font-size:14px;
+  overflow-wrap:anywhere;
 }
 
 .price{
@@ -750,10 +758,12 @@ cursor:pointer;
 
 .analytics-table-wrap{
   overflow:auto;
+  -webkit-overflow-scrolling:touch;
 }
 
 .analytics-table{
   width:100%;
+  min-width:640px;
   border-collapse:collapse;
 }
 
@@ -925,11 +935,22 @@ cursor:pointer;
   border:2px solid #ff6b00;
 }
 
+.admin-restaurants-controls select{
+  min-width:160px;
+}
+
+.admin-restaurants-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
 .table-form{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
   margin-bottom:14px;
+  align-items:center;
 }
 
 /* Admin Home */
@@ -1020,7 +1041,7 @@ cursor:pointer;
 
 .payment-save-toast{
   position:fixed;
-  top:84px;
+  top:calc(var(--app-header-height) + 12px);
   right:24px;
   background:rgba(20, 144, 89, 0.9);
   color:white;
@@ -1028,7 +1049,7 @@ cursor:pointer;
   border-radius:12px;
   padding:10px 14px;
   box-shadow:0 16px 28px rgba(0,0,0,0.34);
-  z-index:1300;
+  z-index:var(--z-toast, 3800);
   animation:fade-in-up 260ms ease;
 }
 
@@ -1273,7 +1294,7 @@ cursor:pointer;
   position:fixed;
   inset:0;
   background:rgba(0,0,0,0.56);
-  z-index:1400;
+  z-index:var(--z-modal, 4200);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1282,7 +1303,7 @@ cursor:pointer;
 
 .payment-editor-modal{
   width:min(560px, 100%);
-  max-height:calc(100vh - 80px);
+  max-height:calc(100dvh - 40px);
   overflow:auto;
   background:rgba(21, 26, 35, 0.88);
 }
@@ -1317,15 +1338,115 @@ cursor:pointer;
 
 @media (max-width: 768px){
   .admin-dashboard{
-    padding:32px 18px;
+    padding:20px 18px 28px;
   }
 
   .orders-grid{
     grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
   }
 
+  .order-head,
+  .order-line,
+  .order-total,
+  .order-payment-row,
+  .payment-method-head,
+  .menu-top {
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
   .order-buttons button{
     flex:1 1 45%;
+  }
+
+  .menu-card{
+    flex-direction:column;
+  }
+
+  .menu-thumb img,
+  .menu-thumb .placeholder{
+    width:100%;
+    height:180px;
+    border-radius:0;
+  }
+
+  .table-row{
+    min-width:720px;
+  }
+
+  .tables-summary{
+    gap:12px;
+  }
+
+  .summary-card{
+    width:100%;
+    min-width:0;
+  }
+
+  .admin-home-grid{
+    grid-template-columns:1fr;
+  }
+
+  .admin-home-card{
+    padding:18px;
+  }
+
+  .admin-restaurants-controls{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .admin-restaurants-controls input,
+  .admin-restaurants-controls select{
+    width:100%;
+  }
+
+  .admin-restaurants-list{
+    overflow:visible;
+    background:transparent;
+    border:none;
+    box-shadow:none;
+  }
+
+  .admin-restaurants-head{
+    display:none;
+  }
+
+  .admin-restaurants-row{
+    grid-template-columns:1fr !important;
+    gap:12px;
+    padding:14px;
+    margin-bottom:14px;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    background:rgba(255,255,255,0.08);
+    box-shadow:0 12px 24px rgba(0,0,0,0.22);
+    min-width:0;
+  }
+
+  .admin-restaurants-row > span{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    width:100%;
+  }
+
+  .admin-restaurants-row > span::before{
+    content:attr(data-label);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.7px;
+    text-transform:uppercase;
+    color:#ffb366;
+  }
+
+  .admin-restaurants-actions{
+    align-items:stretch;
+  }
+
+  .admin-restaurants-actions button{
+    width:100%;
+    flex:1 1 100%;
   }
 
   .payment-settings-layout{
@@ -1333,10 +1454,41 @@ cursor:pointer;
   }
 
   .payment-save-toast{
-    top:72px;
+    top:calc(var(--app-header-height) + 10px);
     right:12px;
     left:12px;
     text-align:center;
+  }
+}
+
+@media (max-width: 480px){
+  .admin-dashboard{
+    padding:16px 14px 24px;
+  }
+
+  .orders-grid,
+  .menu-grid,
+  .tables-grid,
+  .analytics-chart-grid,
+  .analytics-insight-grid,
+  .owner-settings-grid{
+    grid-template-columns:1fr;
+  }
+
+  .admin-home-card,
+  .table-card,
+  .order-card,
+  .analytics-filter-card,
+  .analytics-table-card,
+  .analytics-chart-card,
+  .analytics-insight-card,
+  .settings-card,
+  .glass-card{
+    padding:16px;
+  }
+
+  .payment-editor-overlay{
+    padding:12px;
   }
 }
 

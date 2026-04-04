@@ -1,7 +1,7 @@
 .payment-receipt-page {
-  min-height: 100vh;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   position: relative;
-  padding: 96px 18px 160px;
+  padding: 16px var(--app-page-padding-x) 24px;
   background:
     radial-gradient(circle at top left, rgba(68, 163, 108, 0.32), transparent 32%),
     radial-gradient(circle at top right, rgba(255, 173, 62, 0.22), transparent 28%),
@@ -280,6 +280,7 @@
 
 .invoice-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
 }
 
@@ -325,7 +326,7 @@
 
 @media (max-width: 720px) {
   .payment-receipt-page {
-    padding: 88px 14px 140px;
+    padding: 16px 14px 24px;
   }
 
   .success-shell,

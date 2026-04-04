@@ -4,8 +4,8 @@
   gap: 64px;
   background: #0d0d0d;
   color: #f5f5f5;
-  min-height: 100vh;
-  padding-bottom: 140px; /* ensure space above fixed footer */
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
+  padding-bottom: 24px;
 }
 
 .landing-hero {
@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px;
+  padding: 40px var(--app-page-padding-x);
 }
 
 .landing-overlay {
@@ -42,7 +42,7 @@
 }
 
 .landing-content h1 {
-  font-size: 48px;
+  font-size: clamp(34px, 6vw, 48px);
   margin: 0 0 16px;
 }
 
@@ -79,7 +79,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
-  padding: 0 24px;
+  padding: 0 var(--app-page-padding-x);
   max-width: 1080px;
   margin: 0 auto;
 }
@@ -131,8 +131,8 @@
 
 .landing-features {
   text-align: center;
-  padding: 0 24px 64px;
-  margin-bottom: 40px;
+  padding: 0 var(--app-page-padding-x) 32px;
+  margin-bottom: 0;
 }
 
 .landing-features h3 {

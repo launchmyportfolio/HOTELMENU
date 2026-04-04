@@ -1,7 +1,7 @@
 /* HERO SECTION */
 
 .hero {
-  height: 100vh;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   background-image: url("assets/restaurent.jpg");
   background-size: cover;
   background-position: center;
@@ -10,6 +10,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px var(--app-page-padding-x);
 }
 
 /* dark overlay */
@@ -34,7 +35,7 @@
 /* heading */
 
 .hero-content h1 {
-  font-size: 55px;
+  font-size: clamp(32px, 6vw, 55px);
   margin-bottom: 20px;
   font-weight: bold;
 }
@@ -42,8 +43,9 @@
 /* paragraph */
 
 .hero-content p {
-  font-size: 18px;
+  font-size: clamp(15px, 2.3vw, 18px);
   margin-bottom: 30px;
+  line-height: 1.6;
 }
 
 /* buttons */
@@ -52,6 +54,7 @@
   display: flex;
   justify-content: center;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -78,6 +81,18 @@
 .btn-secondary:hover {
   background: white;
   color: black;
+}
+
+@media (max-width: 640px) {
+  .hero-buttons {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 

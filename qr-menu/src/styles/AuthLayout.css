@@ -1,5 +1,5 @@
 .auth-layout {
-  min-height: 100vh;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   display: flex;
   flex-direction: column;
   background: transparent;
@@ -7,9 +7,9 @@
 
 .auth-layout__top {
   position: fixed;
-  top: 80px; /* below the fixed navbar */
+  top: calc(var(--app-header-height) + 10px); /* below the fixed navbar */
   right: 24px;
-  z-index: 1100;
+  z-index: var(--z-dropdown, 1600);
 }
 
 .auth-layout__body {
@@ -26,4 +26,10 @@
 
 .home-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .auth-layout__top {
+    right: 14px;
+  }
 }

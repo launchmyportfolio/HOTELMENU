@@ -1,11 +1,12 @@
 /* Main section */
 .status-section {
-  height: 100vh;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  padding: 16px var(--app-page-padding-x) 24px;
 }
 
 /* Blurred background image */
@@ -31,30 +32,29 @@
 .status-container {
   text-align: center;
   color: white;
-  width: 90%;
+  width: 100%;
   max-width: 900px;
 }
 
 /* Heading */
 .status-heading {
-  font-size: 42px;
+  font-size: clamp(28px, 5vw, 42px);
   margin-bottom: 10px;
   text-shadow: 0 4px 10px rgba(0,0,0,0.7);
 }
 
 /* Sub text */
 .status-subtext {
-  margin-bottom: 40px;
-  font-size: 18px;
+  margin-bottom: 24px;
+  font-size: 16px;
   opacity: 0.9;
 }
 
 /* Cards container */
 .status-cards {
-  display: flex;
-  justify-content: center;
-  gap: 25px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
 }
 
 /* Status card */
@@ -237,5 +237,10 @@
 
   .status-card {
     padding: 16px 20px;
+  }
+
+  .payment-status-panel .order-line {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

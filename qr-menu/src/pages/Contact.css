@@ -1,6 +1,6 @@
 /* Section with background */
 .contact-section {
-  height: 100vh;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
   background-image: url('../assets/restaurent.jpg');
   background-size: cover;
   background-position: center;
@@ -8,6 +8,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 16px var(--app-page-padding-x) 24px;
 }
 
 /* Dark overlay */
@@ -22,7 +23,7 @@
 .contact-container {
   position: relative;
   color: white;
-  width: 90%;
+  width: 100%;
   max-width: 1100px;
   text-align: center;
 }
@@ -33,14 +34,14 @@
 
 /* Heading */
 .contact-heading {
-  font-size: 40px;
+  font-size: clamp(28px, 5vw, 40px);
   margin-bottom: 10px;
 }
 
 /* Subtext */
 .contact-subtext {
-  margin-bottom: 40px;
-  font-size: 18px;
+  margin-bottom: 24px;
+  font-size: 16px;
   opacity: 0.9;
 }
 
@@ -48,7 +49,7 @@
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 20px;
   align-items: center;
 }
 
@@ -56,7 +57,7 @@
 .contact-info {
   text-align: left;
   background: rgba(255,255,255,0.1);
-  padding: 30px;
+  padding: 22px;
   border-radius: 10px;
   backdrop-filter: blur(6px);
 }
@@ -100,4 +101,10 @@
 
 .contact-button:hover {
   background: #e65c00;
+}
+
+@media (max-width: 768px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
 }

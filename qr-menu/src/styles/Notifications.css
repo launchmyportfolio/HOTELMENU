@@ -16,7 +16,7 @@
 
 .notification-bell-wrapper {
   position: relative;
-  z-index: 1400;
+  z-index: var(--z-dropdown, 1600);
 }
 
 .notification-bell-btn {
@@ -68,6 +68,7 @@
   width: min(420px, calc(100vw - 30px));
   border-radius: 16px;
   overflow: hidden;
+  z-index: var(--z-dropdown, 1600);
 }
 
 .notification-dropdown-head {
@@ -217,12 +218,12 @@
 .notification-toast-stack {
   position: fixed;
   left: 16px;
-  top: 84px;
+  top: calc(var(--app-header-height) + 12px);
   width: min(390px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 3800;
+  z-index: var(--z-toast, 3800);
   pointer-events: none;
 }
 
@@ -315,8 +316,8 @@
 
 .notifications-page {
   position: relative;
-  min-height: 100vh;
-  padding: 96px 18px 140px;
+  min-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
+  padding: 16px var(--app-page-padding-x) 24px;
   background: radial-gradient(circle at 12% 18%, #4f8cff 0%, transparent 40%),
     radial-gradient(circle at 90% 6%, #ff7a7a 0%, transparent 34%),
     linear-gradient(155deg, #111620, #1e2434 46%, #0b1019 100%);
@@ -519,12 +520,12 @@
   }
 
   .notification-toast-stack {
-    top: 74px;
+    top: calc(var(--app-header-height) + 10px);
     left: 10px;
   }
 
   .notifications-page {
-    padding-top: 84px;
+    padding-top: 16px;
   }
 
   .notification-row {
