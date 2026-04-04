@@ -75,7 +75,10 @@ export default function AdminLogin({ onLogin, isAdmin, mode = "owner" }) {
         onLogin(data.token);
         navigate("/admin/restaurants", { replace: true });
       } else if (mode === "register") {
-        setSuccess(data.message || "Registration submitted successfully. Please wait for admin approval.");
+        setSuccess(
+          data.message
+          || "We have successfully sent your details to the admin team. You will get a call from the admin team shortly."
+        );
         setForm({
           username: "",
           name: "",

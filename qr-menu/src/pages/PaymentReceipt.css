@@ -241,6 +241,10 @@
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
+.receipt-btn.danger {
+  background: linear-gradient(140deg, #d74a57, #a91f2d);
+}
+
 .invoice-toolbar {
   margin-bottom: 16px;
 }

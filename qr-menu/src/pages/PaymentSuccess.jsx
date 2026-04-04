@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./PaymentReceipt.css";
 import { buildCustomerRoute, buildReceiptRoute, parsePositiveTableNumber } from "../utils/customerRouting";
+import { useCustomerSession } from "../context/CustomerSessionContext";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -33,6 +34,7 @@ export default function PaymentSuccess() {
   const { restaurantId = "" } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { session, clearSession } = useCustomerSession();
 
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,31 @@ export default function PaymentSuccess() {
     navigate(buildReceiptRoute(restaurantId, receiptId, { token, print: true }));
   }
 
+  async function handleExit() {
+    const activeSessionId = String(session?.sessionId || "").trim();
+    const activeRestaurantId = String(session?.restaurantId || restaurantId || "").trim();
+    const activeTableNumber = Number(session?.tableNumber || receipt?.tableNumber || tableNumber || 0);
+
+    if (activeSessionId && activeRestaurantId && activeTableNumber) {
+      try {
+        await fetch(`${API_BASE}/api/customer/session/end`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurantId: activeRestaurantId,
+            tableNumber: activeTableNumber,
+            sessionId: activeSessionId
+          })
+        });
+      } catch {
+        // Best-effort logout before redirecting home.
+      }
+    }
+
+    clearSession?.();
+    navigate("/", { replace: true });
+  }
+
   return (
     <section className="payment-receipt-page">
       <div className="payment-receipt-overlay" />
@@ -125,6 +152,9 @@ export default function PaymentSuccess() {
               <Link className="receipt-btn" to={visitAgainUrl}>
                 Visit Again
               </Link>
+              <button type="button" className="receipt-btn danger" onClick={handleExit}>
+                Exit
+              </button>
             </div>
           </div>
         )}
@@ -217,6 +247,9 @@ export default function PaymentSuccess() {
               <Link className="receipt-btn ghost" to={visitAgainUrl}>
                 Visit Again
               </Link>
+              <button type="button" className="receipt-btn danger" onClick={handleExit}>
+                Exit
+              </button>
             </div>
           </>
         )}

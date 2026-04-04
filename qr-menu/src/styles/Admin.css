@@ -454,6 +454,16 @@ border-radius:6px;
 cursor:pointer;
 }
 
+.admin-login .login-card .error-text{
+  color:#b42318;
+}
+
+.admin-login .login-card .info-text{
+  color:#6b3f12;
+  font-weight:600;
+  line-height:1.5;
+}
+
 .error-text{
   color:#ffb3b3;
   text-align:center;
