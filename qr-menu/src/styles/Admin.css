@@ -105,6 +105,25 @@
   box-shadow:0 6px 18px rgba(0,0,0,0.25);
 }
 
+.table-search::placeholder{
+  color:rgba(255,255,255,0.72);
+}
+
+.table-controls select{
+  min-width:160px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.2);
+  background:rgba(0,0,0,0.35);
+  color:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,0.25);
+}
+
+.table-controls select option{
+  background:#fff;
+  color:#111;
+}
+
 .table-list{
   width:100%;
   background:rgba(255,255,255,0.04);
@@ -124,6 +143,19 @@
   border-bottom:1px solid rgba(255,255,255,0.06);
 }
 
+.table-row > span{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.table-row .muted{
+  color:rgba(255,255,255,0.72);
+}
+
+.table-row strong{
+  color:#fff;
+}
+
 .table-row:last-child{
   border-bottom:none;
 }
@@ -140,6 +172,7 @@
   display:flex;
   gap:8px;
   flex-wrap:wrap;
+  align-items:stretch;
 }
 
 .orders-grid{
@@ -276,6 +309,16 @@
   color:#b82336;
 }
 
+.payment-pill.paid{
+  background:#ddf9e8;
+  color:#1f7a3d;
+}
+
+.payment-pill.unpaid{
+  background:#ffe1e5;
+  color:#b82336;
+}
+
 .order-status-row{
   display:flex;
   flex-direction:column;
@@ -289,13 +332,18 @@
 }
 
 .order-buttons button{
-  flex:1 1 120px;
+  flex:1 1 140px;
   border:none;
-  padding:8px;
+  min-height:42px;
+  padding:10px 12px;
   background:#ff6b00;
   color:white;
   border-radius:8px;
   cursor:pointer;
+  line-height:1.25;
+  font-weight:700;
+  white-space:normal;
+  text-align:center;
 }
 
 .order-buttons button:hover{
@@ -325,6 +373,12 @@
 .status-pill.preparing{ background:#ffe2cf; color:#cc5a00;}
 .status-pill.pending{ background:#e5e5e5; color:#555;}
 .status-pill.rejected{ background:#ffe3e6; color:#b82336;}
+.status-pill.approved{ background:#d8f5e3; color:#1f7a3d;}
+.status-pill.pending-approval{ background:#fff0ca; color:#aa7a00;}
+.status-pill.active{ background:#d8f5e3; color:#1f7a3d;}
+.status-pill.inactive{ background:#ececf1; color:#585b63;}
+.status-pill.suspended{ background:#ffe3e6; color:#b82336;}
+.status-pill.expired{ background:#fff0ca; color:#aa7a00;}
 
 .delete{
   width:auto;
@@ -504,13 +558,20 @@ cursor:pointer;
 .menu-actions button,
 .menu-actions .ghost-btn{
   border:none;
-  padding:8px 10px;
+  min-height:42px;
+  padding:10px 12px;
   border-radius:8px;
   cursor:pointer;
   background:#ff6b00;
   color:white;
   font-weight:600;
   text-decoration:none;
+  line-height:1.25;
+  white-space:normal;
+  text-align:center;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .menu-actions .ghost-btn{
@@ -567,7 +628,9 @@ cursor:pointer;
   border-radius:12px;
   color:#333;
   min-width:160px;
+  flex:1 1 180px;
   box-shadow:0 8px 18px rgba(0,0,0,0.18);
+  font-weight:700;
 }
 
 .summary-label{
@@ -641,6 +704,7 @@ cursor:pointer;
 .settings-submit-btn{
   border:none;
   border-radius:10px;
+  min-height:42px;
   padding:10px 14px;
   background:#ff6b00;
   color:white;
@@ -919,14 +983,21 @@ cursor:pointer;
 }
 
 .table-actions button{
-  flex:1;
+  flex:1 1 140px;
   border:none;
-  padding:8px;
+  min-height:42px;
+  padding:10px 12px;
   border-radius:8px;
   cursor:pointer;
   background:#ff6b00;
   color:white;
   font-weight:600;
+  line-height:1.25;
+  white-space:normal;
+  text-align:center;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .table-actions .ghost-btn{
@@ -935,14 +1006,25 @@ cursor:pointer;
   border:2px solid #ff6b00;
 }
 
+.table-actions .danger{
+  background:#d7263d;
+  color:#fff;
+}
+
 .admin-restaurants-controls select{
   min-width:160px;
 }
 
 .admin-restaurants-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+  gap:10px;
+  width:100%;
+}
+
+.admin-restaurants-actions button{
+  width:100%;
+  margin:0;
 }
 
 .table-form{
@@ -1013,9 +1095,10 @@ cursor:pointer;
 
 .admin-home-card p{
   margin:0;
-  color:#555;
+  color:#444;
   position:relative;
   z-index:1;
+  line-height:1.5;
 }
 
 .table-form input{
@@ -1025,6 +1108,7 @@ cursor:pointer;
 }
 
 .table-form button{
+  min-height:42px;
   padding:10px 14px;
   border-radius:8px;
   border:none;
@@ -1130,6 +1214,7 @@ cursor:pointer;
 .quick-add-buttons button{
   border:none;
   border-radius:22px;
+  min-height:40px;
   padding:8px 12px;
   background:rgba(255,255,255,0.18);
   color:#fff;
@@ -1279,11 +1364,18 @@ cursor:pointer;
   flex:1 1 120px;
   border:none;
   border-radius:10px;
-  padding:8px 10px;
+  min-height:42px;
+  padding:10px 12px;
   background:#ff6b00;
   color:white;
   cursor:pointer;
   font-weight:700;
+  line-height:1.25;
+  white-space:normal;
+  text-align:center;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .payment-method-actions .danger{
@@ -1323,11 +1415,17 @@ cursor:pointer;
 .payment-editor-actions button{
   border:none;
   border-radius:10px;
-  padding:9px 14px;
+  min-height:42px;
+  padding:10px 14px;
   font-weight:700;
   cursor:pointer;
   background:#ff6b00;
   color:#fff;
+  white-space:normal;
+  text-align:center;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .payment-editor-actions .ghost-btn{
@@ -1441,12 +1539,11 @@ cursor:pointer;
   }
 
   .admin-restaurants-actions{
-    align-items:stretch;
+    grid-template-columns:1fr;
   }
 
   .admin-restaurants-actions button{
     width:100%;
-    flex:1 1 100%;
   }
 
   .payment-settings-layout{
@@ -1533,6 +1630,7 @@ cursor:pointer;
   flex-direction:column;
   gap:6px;
   font-weight:600;
+  color:#222;
 }
 
 .menu-form input,
@@ -1553,6 +1651,7 @@ cursor:pointer;
   background:#ff6b00;
   color:white;
   border:none;
+  min-height:42px;
   padding:10px 16px;
   border-radius:8px;
   cursor:pointer;
